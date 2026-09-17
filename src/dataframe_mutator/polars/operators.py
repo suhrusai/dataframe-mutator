@@ -1190,6 +1190,105 @@ class PolarsSumSqMutation(MutationOperator):
         return code
 
 
+class PolarsClipMutation(MutationOperator):
+    """Mutate Polars clip operations for value bounding."""
+
+    name = "polars_clip_mutation"
+    description = "Changes clip min/max bounds."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars clip operation."""
+        if isinstance(node, str):
+            return ".clip(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply clip mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate clip operations."""
+        return re.sub(
+            r"\.clip\(min=(\d+),\s*max=(\d+)\)",
+            r".clip(min=0, max=100)",
+            code,
+            count=1
+        )
+
+
+class PolarsRollingMutation(MutationOperator):
+    """Mutate Polars rolling operations for moving window calculations."""
+
+    name = "polars_rolling_mutation"
+    description = "Changes rolling window size or operation."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars rolling operation."""
+        if isinstance(node, str):
+            return ".rolling_" in node
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply rolling mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate rolling operations."""
+        mutations = [
+            (r"\.rolling_sum\((\d+)\)", r".rolling_mean(\1)"),
+            (r"\.rolling_mean\((\d+)\)", r".rolling_sum(\1)"),
+            (r"\.rolling_max\((\d+)\)", r".rolling_min(\1)"),
+            (r"\.rolling_min\((\d+)\)", r".rolling_max(\1)"),
+        ]
+
+        for pattern, replacement in mutations:
+            if re.search(pattern, code):
+                return re.sub(pattern, replacement, code, count=1)
+        return code
+
+
+class PolarsGatherMutation(MutationOperator):
+    """Mutate Polars gather/take operations for row selection."""
+
+    name = "polars_gather_mutation"
+    description = "Changes gather/take indices."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars gather operation."""
+        if isinstance(node, str):
+            return (".gather(" in node or ".take(" in node)
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply gather mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate gather operations."""
+        return re.sub(r"\.gather\((\d+)\)", r".gather(0)", code, count=1)
+
+
+class PolarsCompactMutation(MutationOperator):
+    """Mutate Polars compact operations for removing nulls."""
+
+    name = "polars_compact_mutation"
+    description = "Removes compact operations for struct/list nulls."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars compact operation."""
+        if isinstance(node, str):
+            return ".compact(" in node or "compact()" in node
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply compact mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate compact operations."""
+        return re.sub(r"\.compact\([^)]*\)", "", code, count=1)
+
+
 def get_all_polars_operators() -> List[Type[MutationOperator]]:
     """Get all available Polars mutation operators."""
     return [
@@ -1232,4 +1331,8 @@ def get_all_polars_operators() -> List[Type[MutationOperator]]:
         PolarsNUniqueMutation,
         PolarsBinarySearchMutation,
         PolarsSumSqMutation,
+        PolarsClipMutation,
+        PolarsRollingMutation,
+        PolarsGatherMutation,
+        PolarsCompactMutation,
     ]

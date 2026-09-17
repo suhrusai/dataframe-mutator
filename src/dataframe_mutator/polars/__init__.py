@@ -40,6 +40,10 @@ from .operators import (
     PolarsNUniqueMutation,
     PolarsBinarySearchMutation,
     PolarsSumSqMutation,
+    PolarsClipMutation,
+    PolarsRollingMutation,
+    PolarsGatherMutation,
+    PolarsCompactMutation,
     get_all_polars_operators,
 )
 
@@ -83,5 +87,9 @@ __all__ = [
     "PolarsNUniqueMutation",
     "PolarsBinarySearchMutation",
     "PolarsSumSqMutation",
+    "PolarsClipMutation",
+    "PolarsRollingMutation",
+    "PolarsGatherMutation",
+    "PolarsCompactMutation",
     "get_all_polars_operators",
 ]
