@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dataframe-mutator"
+version = "0.1.0"
+description = "Mutation testing for dataframe operations across multiple libraries (Polars, PySpark, etc.)"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Dataframe Mutator Contributors"}
+]
+
+dependencies = [
+    "mutmut>=2.4.0",
+]
+
+[project.optional-dependencies]
+polars = ["polars>=0.19.0"]
+pyspark = ["pyspark>=3.0.0"]
+pandas = ["pandas>=1.0.0"]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+all = [
+    "dataframe-mutator[polars,pyspark,pandas,dev]",
+]
+
+[tool.setuptools]
+packages = ["dataframe_mutator"]
+
+[tool.setuptools.package-dir]
+dataframe_mutator = "src/dataframe_mutator"
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+select = ["E", "F", "W", "I"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
