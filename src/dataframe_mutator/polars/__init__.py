@@ -1,6 +1,7 @@
 """Polars dataframe mutation testing operators and smart analysis."""
 
 from .operators import (
+    # Core operators
     PolarsFilterOperatorMutation,
     PolarsSelectColumnsMutation,
     PolarsAggregationMutation,
@@ -44,6 +45,7 @@ from .operators import (
     PolarsRollingMutation,
     PolarsGatherMutation,
     PolarsCompactMutation,
+    # Expanded support
     PolarsStringStartsWithMutation,
     PolarsStringEndsWithMutation,
     PolarsStringContainsMutation,
@@ -58,6 +60,26 @@ from .operators import (
     PolarsDtypeMutation,
     PolarsGroupByDynamicMutation,
     PolarsUniqueCountMutation,
+    # High-priority missing functions
+    PolarsCumSumMutation,
+    PolarsStringSplitMutation,
+    PolarsStringExtractMutation,
+    PolarsRightJoinMutation,
+    PolarsSemiJoinMutation,
+    PolarsMultiColumnGroupMutation,
+    PolarsStringPadMutation,
+    PolarsStringSliceMutation,
+    PolarsListMinMaxMutation,
+    PolarsListSumMean,
+    PolarsLazyCollectMutation,
+    PolarsForwardFillMutation,
+    PolarsArgSortMutation,
+    PolarsFoldReduceMutation,
+    PolarsRowItemMutation,
+    PolarsDuplicatedUniqueMutation,
+    PolarsNullCountMutation,
+    PolarsSerializationMutation,
+    PolarsScanReadMutation,
     get_all_polars_operators,
 )
 from .smart_integration import (
@@ -66,6 +88,7 @@ from .smart_integration import (
 )
 
 __all__ = [
+    # Core operators (43)
     "PolarsFilterOperatorMutation",
     "PolarsSelectColumnsMutation",
     "PolarsAggregationMutation",
@@ -109,6 +132,7 @@ __all__ = [
     "PolarsRollingMutation",
     "PolarsGatherMutation",
     "PolarsCompactMutation",
+    # Expanded support (14)
     "PolarsStringStartsWithMutation",
     "PolarsStringEndsWithMutation",
     "PolarsStringContainsMutation",
@@ -123,6 +147,26 @@ __all__ = [
     "PolarsDtypeMutation",
     "PolarsGroupByDynamicMutation",
     "PolarsUniqueCountMutation",
+    # High-priority missing functions (18)
+    "PolarsCumSumMutation",
+    "PolarsStringSplitMutation",
+    "PolarsStringExtractMutation",
+    "PolarsRightJoinMutation",
+    "PolarsSemiJoinMutation",
+    "PolarsMultiColumnGroupMutation",
+    "PolarsStringPadMutation",
+    "PolarsStringSliceMutation",
+    "PolarsListMinMaxMutation",
+    "PolarsListSumMean",
+    "PolarsLazyCollectMutation",
+    "PolarsForwardFillMutation",
+    "PolarsArgSortMutation",
+    "PolarsFoldReduceMutation",
+    "PolarsRowItemMutation",
+    "PolarsDuplicatedUniqueMutation",
+    "PolarsNullCountMutation",
+    "PolarsSerializationMutation",
+    "PolarsScanReadMutation",
     "get_all_polars_operators",
     # Smart analysis and filtering
     "SmartPolarsTestRunner",

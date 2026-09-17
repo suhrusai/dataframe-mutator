@@ -1,8 +1,9 @@
 # Polars Function Coverage Status
 
-**Last Updated:** 2026-09-17  
-**Coverage:** 57 mutation operators  
-**Estimated Function Coverage:** ~35% of core Polars API
+**Last Updated:** 2026-09-17 (Expanded)  
+**Coverage:** 76 mutation operators  
+**Test Coverage:** 106 comprehensive tests (all passing)  
+**Estimated Function Coverage:** ~50% of core Polars API
 
 This document tracks which Polars functions have mutation testing support and which are planned for future releases.
 

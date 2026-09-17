@@ -4,9 +4,9 @@
 
 > **Mutation testing** runs your tests against intentionally mutated code. If tests pass despite the mutation, your test is weak. This framework makes it easy to find gaps in data pipeline test coverage.
 
-[![Tests](https://img.shields.io/badge/tests-44%20passing-brightgreen)]()
-[![Operators](https://img.shields.io/badge/operators-57-blue)]()
-[![Coverage](https://img.shields.io/badge/coverage-35%25-yellow)]()
+[![Tests](https://img.shields.io/badge/tests-106%20passing-brightgreen)]()
+[![Operators](https://img.shields.io/badge/operators-76-blue)]()
+[![Coverage](https://img.shields.io/badge/coverage-50%25-yellowgreen)]()
 [![Python](https://img.shields.io/badge/python-3.8+-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 
