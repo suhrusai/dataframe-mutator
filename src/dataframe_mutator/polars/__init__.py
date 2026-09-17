@@ -1,4 +1,4 @@
-"""Polars dataframe mutation testing operators."""
+"""Polars dataframe mutation testing operators and smart analysis."""
 
 from .operators import (
     PolarsFilterOperatorMutation,
@@ -46,6 +46,10 @@ from .operators import (
     PolarsCompactMutation,
     get_all_polars_operators,
 )
+from .smart_integration import (
+    SmartPolarsTestRunner,
+    PolarsSemanticMutationValidator,
+)
 
 __all__ = [
     "PolarsFilterOperatorMutation",
@@ -92,4 +96,7 @@ __all__ = [
     "PolarsGatherMutation",
     "PolarsCompactMutation",
     "get_all_polars_operators",
+    # Smart analysis and filtering
+    "SmartPolarsTestRunner",
+    "PolarsSemanticMutationValidator",
 ]
