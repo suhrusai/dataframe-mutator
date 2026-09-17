@@ -801,6 +801,192 @@ class PolarsBooleanOperatorMutation(MutationOperator):
         return code
 
 
+class PolarsWindowFunctionsMutation(MutationOperator):
+    """Mutate Polars window/over functions to test window operations."""
+
+    name = "polars_window_functions_mutation"
+    description = "Mutates window functions: over, partition_by, order_by."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars window function."""
+        if isinstance(node, str):
+            return (".over(" in node or ".partition_by(" in node or
+                    "pl.col(" in node and ".sum().over" in node)
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply window function mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate window operations."""
+        mutations = [
+            (r'\.over\(\s*["\']([^"\']+)["\']\)', ""),
+            (r'\.partition_by\(\s*["\']([^"\']+)["\']\)', ""),
+            (r'\.sum\(\)\.over\(', r".mean().over("),
+            (r'\.mean\(\)\.over\(', r".sum().over("),
+            (r'\.rank\(\)\.over\(', r".row_number().over("),
+        ]
+
+        for pattern, replacement in mutations:
+            if re.search(pattern, code):
+                return re.sub(pattern, replacement, code, count=1)
+        return code
+
+
+class PolarsCrossJoinMutation(MutationOperator):
+    """Mutate Polars cross_join operations."""
+
+    name = "polars_cross_join_mutation"
+    description = "Changes cross_join to other join types."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars cross_join operation."""
+        if isinstance(node, str):
+            return ".cross_join(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply cross_join mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate cross_join operations."""
+        return re.sub(r"\.cross_join\(", r".inner_join(", code, count=1)
+
+
+class PolarsExplosionMutation(MutationOperator):
+    """Mutate Polars explode operations to test list explosion."""
+
+    name = "polars_explode_mutation"
+    description = "Removes explode operations for list columns."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars explode operation."""
+        if isinstance(node, str):
+            return ".explode(" in node or "explode()" in node
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply explode mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate explode operations."""
+        return re.sub(r"\.explode\([^)]*\)", "", code, count=1)
+
+
+class PolarsUnnestMutation(MutationOperator):
+    """Mutate Polars unnest operations to test struct/struct flattening."""
+
+    name = "polars_unnest_mutation"
+    description = "Removes unnest operations for struct columns."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars unnest operation."""
+        if isinstance(node, str):
+            return ".unnest(" in node or "unnest()" in node
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply unnest mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate unnest operations."""
+        return re.sub(r"\.unnest\([^)]*\)", "", code, count=1)
+
+
+class PolarsIsInMutation(MutationOperator):
+    """Mutate Polars is_in/is_not_in operations for membership tests."""
+
+    name = "polars_is_in_mutation"
+    description = "Changes is_in to is_not_in and vice versa."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars is_in operation."""
+        if isinstance(node, str):
+            return (".is_in(" in node or ".is_not_in(" in node)
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply is_in mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate is_in operations."""
+        mutations = [
+            (r"\.is_in\(", ".is_not_in("),
+            (r"\.is_not_in\(", ".is_in("),
+        ]
+
+        for pattern, replacement in mutations:
+            if re.search(pattern, code):
+                return re.sub(pattern, replacement, code, count=1)
+        return code
+
+
+class PolarsIsNullMutation(MutationOperator):
+    """Mutate Polars is_null/is_not_null operations."""
+
+    name = "polars_is_null_mutation"
+    description = "Changes is_null to is_not_null and vice versa."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars is_null operation."""
+        if isinstance(node, str):
+            return (".is_null(" in node or ".is_not_null(" in node or
+                    ".is_null()" in node or ".is_not_null()" in node)
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply is_null mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate is_null operations."""
+        mutations = [
+            (r"\.is_null\(\)", ".is_not_null()"),
+            (r"\.is_not_null\(\)", ".is_null()"),
+        ]
+
+        for pattern, replacement in mutations:
+            if re.search(pattern, code):
+                return re.sub(pattern, replacement, code, count=1)
+        return code
+
+
+class PolarsInterpolationMutation(MutationOperator):
+    """Mutate Polars interpolation operations for missing values."""
+
+    name = "polars_interpolation_mutation"
+    description = "Removes interpolation operations or changes method."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars interpolation operation."""
+        if isinstance(node, str):
+            return ".interpolate(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply interpolation mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate interpolation operations."""
+        mutations = [
+            (r'\.interpolate\(\s*method=["\']linear["\']\)',
+             r'.interpolate( method="nearest")'),
+            (r'\.interpolate\(\s*method=["\']nearest["\']\)',
+             r'.interpolate( method="linear")'),
+        ]
+
+        for pattern, replacement in mutations:
+            if re.search(pattern, code):
+                return re.sub(pattern, replacement, code, count=1)
+        return code
+
+
 def get_all_polars_operators() -> List[Type[MutationOperator]]:
     """Get all available Polars mutation operators."""
     return [
@@ -829,4 +1015,11 @@ def get_all_polars_operators() -> List[Type[MutationOperator]]:
         PolarsListOperationsMutation,
         PolarsArithmeticOperatorMutation,
         PolarsBooleanOperatorMutation,
+        PolarsWindowFunctionsMutation,
+        PolarsCrossJoinMutation,
+        PolarsExplosionMutation,
+        PolarsUnnestMutation,
+        PolarsIsInMutation,
+        PolarsIsNullMutation,
+        PolarsInterpolationMutation,
     ]

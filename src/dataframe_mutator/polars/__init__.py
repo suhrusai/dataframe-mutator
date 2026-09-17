@@ -26,6 +26,13 @@ from .operators import (
     PolarsListOperationsMutation,
     PolarsArithmeticOperatorMutation,
     PolarsBooleanOperatorMutation,
+    PolarsWindowFunctionsMutation,
+    PolarsCrossJoinMutation,
+    PolarsExplosionMutation,
+    PolarsUnnestMutation,
+    PolarsIsInMutation,
+    PolarsIsNullMutation,
+    PolarsInterpolationMutation,
     get_all_polars_operators,
 )
 
@@ -55,5 +62,12 @@ __all__ = [
     "PolarsListOperationsMutation",
     "PolarsArithmeticOperatorMutation",
     "PolarsBooleanOperatorMutation",
+    "PolarsWindowFunctionsMutation",
+    "PolarsCrossJoinMutation",
+    "PolarsExplosionMutation",
+    "PolarsUnnestMutation",
+    "PolarsIsInMutation",
+    "PolarsIsNullMutation",
+    "PolarsInterpolationMutation",
     "get_all_polars_operators",
 ]
