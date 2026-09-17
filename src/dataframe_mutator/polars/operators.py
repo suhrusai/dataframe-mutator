@@ -2133,6 +2133,677 @@ class PolarsScanReadMutation(MutationOperator):
         return re.sub(r"\.scan_\w+\([^)]*\)", "", code, count=1)
 
 
+# ============= REMAINING HIGH-PRIORITY OPERATORS (for 100% coverage) =============
+
+class PolarsFilterByDtypesMutation(MutationOperator):
+    """Mutate Polars filter_by_dtypes operations."""
+
+    name = "polars_filter_by_dtypes_mutation"
+    description = "Mutates filter_by_dtypes selections."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return "filter_by_dtypes" in node or "select_by_dtype" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        mutations = [
+            (r"filter_by_dtypes", "select_by_dtype"),
+            (r"select_by_dtype", "filter_by_dtypes"),
+        ]
+        for pattern, replacement in mutations:
+            if pattern in code:
+                return code.replace(pattern, replacement, 1)
+        return code
+
+
+class PolarsExcludeMutation(MutationOperator):
+    """Mutate Polars exclude operations."""
+
+    name = "polars_exclude_mutation"
+    description = "Mutates exclude column operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".exclude(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"\.exclude\(", ".select(", code, count=1)
+
+
+class PolarsNthMutation(MutationOperator):
+    """Mutate Polars nth operations."""
+
+    name = "polars_nth_mutation"
+    description = "Mutates nth column selection."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".nth(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        match = re.search(r"\.nth\((\d+)\)", code)
+        if match:
+            idx = int(match.group(1))
+            return re.sub(r"\.nth\(\d+\)", f".nth({idx + 1})", code, count=1)
+        return code
+
+
+class PolarsAsofJoinMutation(MutationOperator):
+    """Mutate Polars asof_join operations."""
+
+    name = "polars_asof_join_mutation"
+    description = "Mutates asof_join operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".asof_join(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"\.asof_join\(", ".inner_join(", code, count=1)
+
+
+class PolarsSortByExprsMutation(MutationOperator):
+    """Mutate Polars sort by expressions."""
+
+    name = "polars_sort_by_exprs_mutation"
+    description = "Mutates sort_by_exprs operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return "sort_by_exprs" in node or ".sort(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        mutations = [
+            (r"\.sort_by_exprs\(", ".sort("),
+            (r"sort_by_exprs", "sort"),
+        ]
+        for pattern, replacement in mutations:
+            if pattern in code:
+                return code.replace(pattern, replacement, 1)
+        return code
+
+
+# ============= MEDIUM-PRIORITY STRING OPERATORS =============
+
+class PolarsStringConcatMutation(MutationOperator):
+    """Mutate Polars string concatenation."""
+
+    name = "polars_string_concat_mutation"
+    description = "Mutates str.concat_str operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return "concat_str" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"\.concat_str\(", ".join_str(", code, count=1)
+
+
+class PolarsStringZfillMutation(MutationOperator):
+    """Mutate Polars string zfill operations."""
+
+    name = "polars_string_zfill_mutation"
+    description = "Mutates str.zfill operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".zfill(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        match = re.search(r"\.zfill\((\d+)\)", code)
+        if match:
+            width = int(match.group(1))
+            return re.sub(r"\.zfill\(\d+\)", f".zfill({width + 1})", code, count=1)
+        return code
+
+
+class PolarsStringReplaceAllMutation(MutationOperator):
+    """Mutate Polars string replace_all operations."""
+
+    name = "polars_string_replace_all_mutation"
+    description = "Mutates str.replace_all operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".replace_all(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"\.replace_all\(", ".replace(", code, count=1)
+
+
+# ============= MEDIUM-PRIORITY LIST OPERATORS =============
+
+class PolarsListUniqueMutation(MutationOperator):
+    """Mutate Polars list unique operations."""
+
+    name = "polars_list_unique_mutation"
+    description = "Mutates list.unique operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".list.unique(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"\.list\.unique\(", ".list.reverse(", code, count=1)
+
+
+class PolarsListSortMutation(MutationOperator):
+    """Mutate Polars list sort operations."""
+
+    name = "polars_list_sort_mutation"
+    description = "Mutates list.sort operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".list.sort(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        if ".list.sort(descending=True" in code or ".list.sort(reverse=True" in code:
+            return re.sub(r"descending=True", "descending=False", code, count=1)
+        return re.sub(r"\.list\.sort\(", ".list.reverse(", code, count=1)
+
+
+# ============= MEDIUM-PRIORITY I/O OPERATORS =============
+
+class PolarsReadCsvMutation(MutationOperator):
+    """Mutate Polars CSV reading operations."""
+
+    name = "polars_read_csv_mutation"
+    description = "Mutates read_csv operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return "read_csv(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"read_csv\(", "read_parquet(", code, count=1)
+
+
+class PolarsReadParquetMutation(MutationOperator):
+    """Mutate Polars Parquet reading operations."""
+
+    name = "polars_read_parquet_mutation"
+    description = "Mutates read_parquet operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return "read_parquet(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"read_parquet\(", "read_json(", code, count=1)
+
+
+class PolarsReadJsonMutation(MutationOperator):
+    """Mutate Polars JSON reading operations."""
+
+    name = "polars_read_json_mutation"
+    description = "Mutates read_json operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return "read_json(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"read_json\(", "read_csv(", code, count=1)
+
+
+class PolarsWriteCsvMutation(MutationOperator):
+    """Mutate Polars CSV writing operations."""
+
+    name = "polars_write_csv_mutation"
+    description = "Mutates write_csv operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".write_csv(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"\.write_csv\(", ".write_parquet(", code, count=1)
+
+
+class PolarsWriteParquetMutation(MutationOperator):
+    """Mutate Polars Parquet writing operations."""
+
+    name = "polars_write_parquet_mutation"
+    description = "Mutates write_parquet operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".write_parquet(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"\.write_parquet\(", ".write_csv(", code, count=1)
+
+
+# ============= MEDIUM-PRIORITY TYPE CONVERSION OPERATORS =============
+
+class PolarsStringToDateMutation(MutationOperator):
+    """Mutate Polars string to date conversion."""
+
+    name = "polars_string_to_date_mutation"
+    description = "Mutates str.to_date operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".str.to_date(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"\.str\.to_date\(", ".str.to_datetime(", code, count=1)
+
+
+class PolarsStringToDatetimeMutation(MutationOperator):
+    """Mutate Polars string to datetime conversion."""
+
+    name = "polars_string_to_datetime_mutation"
+    description = "Mutates str.to_datetime operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".str.to_datetime(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"\.str\.to_datetime\(", ".str.to_date(", code, count=1)
+
+
+class PolarsStringToIntegerMutation(MutationOperator):
+    """Mutate Polars string to integer conversion."""
+
+    name = "polars_string_to_integer_mutation"
+    description = "Mutates str.to_integer operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".str.to_integer(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"\.str\.to_integer\(", ".str.to_float(", code, count=1)
+
+
+class PolarsStringToFloatMutation(MutationOperator):
+    """Mutate Polars string to float conversion."""
+
+    name = "polars_string_to_float_mutation"
+    description = "Mutates str.to_float operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".str.to_float(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"\.str\.to_float\(", ".str.to_integer(", code, count=1)
+
+
+class PolarsFillNanMutation(MutationOperator):
+    """Mutate Polars fill NaN operations."""
+
+    name = "polars_fill_nan_mutation"
+    description = "Mutates fill_nan operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".fill_nan(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"\.fill_nan\(", ".fill_null(", code, count=1)
+
+
+# ============= LOW-PRIORITY METADATA & PROPERTY OPERATORS =============
+
+class PolarsMetadataPropertyMutation(MutationOperator):
+    """Mutate Polars metadata property access."""
+
+    name = "polars_metadata_property_mutation"
+    description = "Mutates dtypes, columns, schema, shape properties."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return any(prop in node for prop in [".dtypes", ".columns", ".schema", ".shape"])
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        mutations = [
+            (".dtypes", ".columns"),
+            (".columns", ".schema"),
+            (".schema", ".shape"),
+            (".shape", ".dtypes"),
+        ]
+        for old, new in mutations:
+            if old in code:
+                return code.replace(old, new, 1)
+        return code
+
+
+class PolarsDescribeMutation(MutationOperator):
+    """Mutate Polars describe operations."""
+
+    name = "polars_describe_mutation"
+    description = "Mutates describe operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".describe()" in node or "describe(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"\.describe\(\)", ".info()", code, count=1)
+
+
+class PolarsInfoMutation(MutationOperator):
+    """Mutate Polars info operations."""
+
+    name = "polars_info_mutation"
+    description = "Mutates info operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".info()" in node or "info(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"\.info\(\)", ".describe()", code, count=1)
+
+
+class PolarsDistinctMaintainOrderMutation(MutationOperator):
+    """Mutate Polars distinct maintain_order flag."""
+
+    name = "polars_distinct_maintain_order_mutation"
+    description = "Mutates distinct maintain_order flag."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".distinct(" in node and "maintain_order" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        mutations = [
+            (r"maintain_order=True", "maintain_order=False"),
+            (r"maintain_order=False", "maintain_order=True"),
+        ]
+        for pattern, replacement in mutations:
+            if re.search(pattern, code):
+                return re.sub(pattern, replacement, code, count=1)
+        return code
+
+
+class PolarsRowsMultipleMutation(MutationOperator):
+    """Mutate Polars rows multiple selection."""
+
+    name = "polars_rows_multiple_mutation"
+    description = "Mutates rows multiple row selection."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".rows(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"\.rows\(", ".row(", code, count=1)
+
+
+class PolarsPartitionByMutation(MutationOperator):
+    """Mutate Polars partition_by operations."""
+
+    name = "polars_partition_by_mutation"
+    description = "Mutates partition_by in window functions."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return "partition_by" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"partition_by", "group_by", code, count=1)
+
+
+# ============= LOW-PRIORITY ROLLING OPERATORS =============
+
+class PolarsRollingMeanMutation(MutationOperator):
+    """Mutate Polars rolling mean operations."""
+
+    name = "polars_rolling_mean_mutation"
+    description = "Mutates rolling_mean and other rolling variants."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return any(op in node for op in [".rolling_mean(", ".rolling_sum(", ".rolling_", "rolling("])
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        mutations = [
+            (r"\.rolling_mean\(", ".rolling_sum("),
+            (r"\.rolling_sum\(", ".rolling_mean("),
+        ]
+        for pattern, replacement in mutations:
+            if re.search(pattern, code):
+                return re.sub(pattern, replacement, code, count=1)
+        return code
+
+
+class PolarsWithContextMutation(MutationOperator):
+    """Mutate Polars with_context operations."""
+
+    name = "polars_with_context_mutation"
+    description = "Mutates with_context operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".with_context(" in node or "with_context(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"\.with_context\(", ".select(", code, count=1)
+
+
+class PolarsUnpivotExpandMutation(MutationOperator):
+    """Mutate Polars unpivot operations (expanded)."""
+
+    name = "polars_unpivot_expand_mutation"
+    description = "Mutates unpivot operations with enhanced logic."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".unpivot(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        if "on=" in code or "index=" in code:
+            return re.sub(r"on=", "index=", code, count=1)
+        return re.sub(r"\.unpivot\(", ".melt(", code, count=1)
+
+
+class PolarsPivotTableMutation(MutationOperator):
+    """Mutate Polars pivot_table operations."""
+
+    name = "polars_pivot_table_mutation"
+    description = "Mutates pivot_table operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return "pivot_table(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        return re.sub(r"pivot_table\(", "pivot(", code, count=1)
+
+
+class PolarsItemMutationExpanded(MutationOperator):
+    """Mutate Polars item access (expanded)."""
+
+    name = "polars_item_mutation_expanded"
+    description = "Mutates item single value extraction."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".item(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        match = re.search(r"\.item\((\d+),?\s*(\d*)\)", code)
+        if match:
+            row = int(match.group(1))
+            return re.sub(r"\.item\(\d+,?\s*\d*\)", f".item({row + 1})", code, count=1)
+        return code
+
+
+class PolarsGetItemMutation(MutationOperator):
+    """Mutate Polars bracket indexing operations."""
+
+    name = "polars_getitem_mutation"
+    description = "Mutates bracket indexing [\"/\"] operations."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return re.search(r"\[[\"\'][^\"\']+[\"\']", node) is not None
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        # Swap column reference patterns
+        match = re.search(r"\[[\"\']([^\"\']+)[\"\']", code)
+        if match:
+            col_name = match.group(1)
+            new_col = f"{col_name}_mutated" if not col_name.endswith("_mutated") else col_name[:-8]
+            return re.sub(r"\[[\"\']" + re.escape(col_name) + r"[\"\']", f'["{new_col}"]', code, count=1)
+        return code
+
+
+class PolarsSliceExpandMutation(MutationOperator):
+    """Mutate Polars slice operations (expanded)."""
+
+    name = "polars_slice_expand_mutation"
+    description = "Mutates slice operations with index changes."
+
+    def matches(self, node) -> bool:
+        if isinstance(node, str):
+            return ".slice(" in node and not "str.slice" in node
+        return False
+
+    def mutate(self, node) -> str:
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        match = re.search(r"\.slice\((\d+),?\s*(\d*)\)", code)
+        if match:
+            offset = int(match.group(1))
+            return re.sub(r"\.slice\(\d+,?\s*\d*\)", f".slice({offset + 1})", code, count=1)
+        return code
+
+
 def get_all_polars_operators() -> List[Type[MutationOperator]]:
     """Get all available Polars mutation operators."""
     return [
@@ -2215,4 +2886,47 @@ def get_all_polars_operators() -> List[Type[MutationOperator]]:
         PolarsNullCountMutation,
         PolarsSerializationMutation,
         PolarsScanReadMutation,
+        # Additional high-priority operators (6)
+        PolarsFilterByDtypesMutation,
+        PolarsExcludeMutation,
+        PolarsNthMutation,
+        PolarsAsofJoinMutation,
+        PolarsSortByExprsMutation,
+        # Medium-priority string operators (3)
+        PolarsStringConcatMutation,
+        PolarsStringZfillMutation,
+        PolarsStringReplaceAllMutation,
+        # Medium-priority list operators (2)
+        PolarsListUniqueMutation,
+        PolarsListSortMutation,
+        # Medium-priority I/O operators (5)
+        PolarsReadCsvMutation,
+        PolarsReadParquetMutation,
+        PolarsReadJsonMutation,
+        PolarsWriteCsvMutation,
+        PolarsWriteParquetMutation,
+        # Medium-priority type conversion operators (5)
+        PolarsStringToDateMutation,
+        PolarsStringToDatetimeMutation,
+        PolarsStringToIntegerMutation,
+        PolarsStringToFloatMutation,
+        PolarsFillNanMutation,
+        # Low-priority metadata & property operators (3)
+        PolarsMetadataPropertyMutation,
+        PolarsDescribeMutation,
+        PolarsInfoMutation,
+        # Low-priority distinct & duplicates (1)
+        PolarsDistinctMaintainOrderMutation,
+        # Low-priority row operations (1)
+        PolarsRowsMultipleMutation,
+        # Low-priority partition & rolling (2)
+        PolarsPartitionByMutation,
+        PolarsRollingMeanMutation,
+        # Low-priority advanced operations (5)
+        PolarsWithContextMutation,
+        PolarsUnpivotExpandMutation,
+        PolarsPivotTableMutation,
+        PolarsItemMutationExpanded,
+        PolarsGetItemMutation,
+        PolarsSliceExpandMutation,
     ]
