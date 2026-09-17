@@ -11,6 +11,11 @@ from .operators import (
     PolarsDropColumnsMutation,
     PolarsRenameMutation,
     PolarsDistinctMutation,
+    PolarsFillNullMutation,
+    PolarsDropNullMutation,
+    PolarsCastMutation,
+    PolarsSliceMutation,
+    PolarsLimitMutation,
     get_all_polars_operators,
 )
 
@@ -25,5 +30,10 @@ __all__ = [
     "PolarsDropColumnsMutation",
     "PolarsRenameMutation",
     "PolarsDistinctMutation",
+    "PolarsFillNullMutation",
+    "PolarsDropNullMutation",
+    "PolarsCastMutation",
+    "PolarsSliceMutation",
+    "PolarsLimitMutation",
     "get_all_polars_operators",
 ]

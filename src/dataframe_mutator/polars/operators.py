@@ -323,6 +323,144 @@ class PolarsDistinctMutation(MutationOperator):
         return code
 
 
+class PolarsFillNullMutation(MutationOperator):
+    """Mutate Polars fill_null operations to test null handling."""
+
+    name = "polars_fill_null_mutation"
+    description = "Removes fill_null operations or changes fill values."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars fill_null operation."""
+        if isinstance(node, str):
+            return ".fill_null(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply fill_null mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate fill_null operations."""
+        mutations = [
+            (r"\.fill_null\(\d+\)", ".fill_null(0)"),
+            (r'\.fill_null\(["\']([^"\']+)["\']\)', '.fill_null("UNKNOWN")'),
+            (r"\.fill_null\(pl\.lit\(\d+\)\)", ".fill_null(pl.lit(-1))"),
+        ]
+
+        for pattern, replacement in mutations:
+            if re.search(pattern, code):
+                return re.sub(pattern, replacement, code, count=1)
+        return code
+
+
+class PolarsDropNullMutation(MutationOperator):
+    """Mutate Polars drop_nulls operations to test null removal."""
+
+    name = "polars_drop_null_mutation"
+    description = "Removes drop_nulls operations or changes subset columns."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars drop_nulls operation."""
+        if isinstance(node, str):
+            return ".drop_nulls(" in node or ".drop_null(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply drop_nulls mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate drop_nulls operations."""
+        return re.sub(r"\.drop_nulls\([^)]*\)", "", code, count=1)
+
+
+class PolarsCastMutation(MutationOperator):
+    """Mutate Polars cast/astype operations to test type conversions."""
+
+    name = "polars_cast_mutation"
+    description = "Changes cast types: Int to String, Float to Int, etc."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars cast operation."""
+        if isinstance(node, str):
+            return (".cast(" in node or ".astype(" in node or
+                    ".str(" in node or ".int(" in node or ".float(" in node)
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply cast mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate cast operations."""
+        mutations = [
+            (r"\.cast\(\s*pl\.Int(\d+)\s*\)", r".cast( pl.Int64)"),
+            (r"\.cast\(\s*pl\.Float(\d+)\s*\)", r".cast( pl.Float64)"),
+            (r"\.cast\(\s*pl\.Utf8\s*\)", r".cast( pl.Int64)"),
+            (r"\.cast\(\s*pl\.String\s*\)", r".cast( pl.Int64)"),
+            (r"pl\.col\(['\"]([^'\"]+)['\"]\)\.str\.", r"pl.col('\1')."),
+            (r"pl\.col\(['\"]([^'\"]+)['\"]\)\.int\.", r"pl.col('\1')."),
+        ]
+
+        for pattern, replacement in mutations:
+            if re.search(pattern, code):
+                return re.sub(pattern, replacement, code, count=1)
+        return code
+
+
+class PolarsSliceMutation(MutationOperator):
+    """Mutate Polars slice/head/tail operations to test data slicing."""
+
+    name = "polars_slice_mutation"
+    description = "Changes slice/head/tail parameters to select different rows."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars slice/head/tail operation."""
+        if isinstance(node, str):
+            return any(op in node for op in [".slice(", ".head(", ".tail("])
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply slice mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate slice/head/tail operations."""
+        mutations = [
+            (r"\.head\((\d+)\)", r".head(1)"),
+            (r"\.tail\((\d+)\)", r".tail(1)"),
+            (r"\.slice\((\d+),\s*(\d+)\)", r".slice(0, 1)"),
+            (r"\.head\(\)", r".tail()"),
+            (r"\.tail\(\)", r".head()"),
+        ]
+
+        for pattern, replacement in mutations:
+            if re.search(pattern, code):
+                return re.sub(pattern, replacement, code, count=1)
+        return code
+
+
+class PolarsLimitMutation(MutationOperator):
+    """Mutate Polars limit operations to test row limiting."""
+
+    name = "polars_limit_mutation"
+    description = "Changes limit values to return different number of rows."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars limit operation."""
+        if isinstance(node, str):
+            return ".limit(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply limit mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate limit operations."""
+        return re.sub(r"\.limit\((\d+)\)", r".limit(1)", code, count=1)
+
+
 def get_all_polars_operators() -> List[Type[MutationOperator]]:
     """Get all available Polars mutation operators."""
     return [
@@ -336,4 +474,9 @@ def get_all_polars_operators() -> List[Type[MutationOperator]]:
         PolarsDropColumnsMutation,
         PolarsRenameMutation,
         PolarsDistinctMutation,
+        PolarsFillNullMutation,
+        PolarsDropNullMutation,
+        PolarsCastMutation,
+        PolarsSliceMutation,
+        PolarsLimitMutation,
     ]
