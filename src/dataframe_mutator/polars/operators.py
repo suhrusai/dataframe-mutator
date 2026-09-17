@@ -461,6 +461,164 @@ class PolarsLimitMutation(MutationOperator):
         return re.sub(r"\.limit\((\d+)\)", r".limit(1)", code, count=1)
 
 
+class PolarsStringOperationsMutation(MutationOperator):
+    """Mutate Polars string operations to test string transformations."""
+
+    name = "polars_string_ops_mutation"
+    description = "Mutates string operations: upper to lower, trim, etc."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars string operation."""
+        if isinstance(node, str):
+            string_ops = (
+                ".str.to_uppercase()", ".str.to_lowercase()",
+                ".str.strip()", ".str.lstrip()", ".str.rstrip()",
+                ".str.replace(", ".str.contains(", ".str.starts_with(",
+                ".str.ends_with(", ".str.lengths()", ".str.slice("
+            )
+            return any(op in node for op in string_ops)
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply string operation mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate string operations."""
+        mutations = [
+            (r"\.str\.to_uppercase\(\)", ".str.to_lowercase()"),
+            (r"\.str\.to_lowercase\(\)", ".str.to_uppercase()"),
+            (r"\.str\.strip\(\)", ".str.lstrip()"),
+            (r"\.str\.lstrip\(\)", ".str.rstrip()"),
+            (r"\.str\.rstrip\(\)", ".str.strip()"),
+            (r'\.str\.contains\(\s*["\']([^"\']+)["\']\s*,\s*literal=True',
+             r'.str.contains( "\1", literal=False'),
+            (r'\.str\.contains\(\s*["\']([^"\']+)["\']\s*,\s*literal=False',
+             r'.str.contains( "\1", literal=True'),
+            (r"\.str\.lengths\(\)", ""),
+        ]
+
+        for pattern, replacement in mutations:
+            if re.search(pattern, code):
+                return re.sub(pattern, replacement, code, count=1)
+        return code
+
+
+class PolarsConcatMutation(MutationOperator):
+    """Mutate Polars concat operations to test dataframe concatenation."""
+
+    name = "polars_concat_mutation"
+    description = "Removes concat operations or changes concat mode."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars concat operation."""
+        if isinstance(node, str):
+            return ("pl.concat(" in node or ".concat(" in node)
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply concat mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate concat operations."""
+        mutations = [
+            (r"pl\.concat\(([^)]+),\s*how=['\"]vertical['\"]\)",
+             r"pl.concat(\1, how='horizontal')"),
+            (r"pl\.concat\(([^)]+),\s*how=['\"]horizontal['\"]\)",
+             r"pl.concat(\1, how='vertical')"),
+            (r"\.concat\(([^)]+),\s*how=['\"]vertical['\"]\)",
+             r".concat(\1, how='horizontal')"),
+        ]
+
+        for pattern, replacement in mutations:
+            if re.search(pattern, code):
+                return re.sub(pattern, replacement, code, count=1)
+        return code
+
+
+class PolarsMeltMutation(MutationOperator):
+    """Mutate Polars melt operations to test unpivoting."""
+
+    name = "polars_melt_mutation"
+    description = "Changes melt id_vars or value_vars parameters."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars melt operation."""
+        if isinstance(node, str):
+            return ".melt(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply melt mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate melt operations."""
+        # Simplify by removing id_vars
+        return re.sub(r'id_vars=\[[^\]]+\],\s*', "", code, count=1)
+
+
+class PolarsPivotMutation(MutationOperator):
+    """Mutate Polars pivot operations to test pivoting."""
+
+    name = "polars_pivot_mutation"
+    description = "Changes pivot parameters: index, columns, values."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars pivot operation."""
+        if isinstance(node, str):
+            return ".pivot(" in node
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply pivot mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate pivot operations."""
+        # Change pivot parameters
+        return re.sub(
+            r'\.pivot\(\s*on=["\']([^"\']+)["\'],\s*index=["\']([^"\']+)["\']\)',
+            r'.pivot( on="\2", index="\1")',
+            code,
+            count=1
+        )
+
+
+class PolarsWhenThenMutation(MutationOperator):
+    """Mutate Polars when/then operations for conditional logic."""
+
+    name = "polars_when_then_mutation"
+    description = "Mutates conditions in when/then/otherwise statements."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars when/then operation."""
+        if isinstance(node, str):
+            return ("pl.when(" in node or ".when(" in node)
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply when/then mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate when/then conditions."""
+        mutations = [
+            (r"pl\.when\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*==",
+             r"pl.when( pl.col('\1') !="),
+            (r"\.when\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*==",
+             r".when( pl.col('\1') !="),
+            (r"pl\.when\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*>",
+             r"pl.when( pl.col('\1') <"),
+        ]
+
+        for pattern, replacement in mutations:
+            if re.search(pattern, code):
+                return re.sub(pattern, replacement, code, count=1)
+        return code
+
+
 def get_all_polars_operators() -> List[Type[MutationOperator]]:
     """Get all available Polars mutation operators."""
     return [
@@ -479,4 +637,9 @@ def get_all_polars_operators() -> List[Type[MutationOperator]]:
         PolarsCastMutation,
         PolarsSliceMutation,
         PolarsLimitMutation,
+        PolarsStringOperationsMutation,
+        PolarsConcatMutation,
+        PolarsMeltMutation,
+        PolarsPivotMutation,
+        PolarsWhenThenMutation,
     ]

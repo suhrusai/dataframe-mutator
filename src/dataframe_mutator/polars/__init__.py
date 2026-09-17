@@ -16,6 +16,11 @@ from .operators import (
     PolarsCastMutation,
     PolarsSliceMutation,
     PolarsLimitMutation,
+    PolarsStringOperationsMutation,
+    PolarsConcatMutation,
+    PolarsMeltMutation,
+    PolarsPivotMutation,
+    PolarsWhenThenMutation,
     get_all_polars_operators,
 )
 
@@ -35,5 +40,10 @@ __all__ = [
     "PolarsCastMutation",
     "PolarsSliceMutation",
     "PolarsLimitMutation",
+    "PolarsStringOperationsMutation",
+    "PolarsConcatMutation",
+    "PolarsMeltMutation",
+    "PolarsPivotMutation",
+    "PolarsWhenThenMutation",
     "get_all_polars_operators",
 ]
