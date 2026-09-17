@@ -5,7 +5,8 @@
 > **Mutation testing** runs your tests against intentionally mutated code. If tests pass despite the mutation, your test is weak. This framework makes it easy to find gaps in data pipeline test coverage.
 
 [![Tests](https://img.shields.io/badge/tests-44%20passing-brightgreen)]()
-[![Operators](https://img.shields.io/badge/operators-43+-blue)]()
+[![Operators](https://img.shields.io/badge/operators-57-blue)]()
+[![Coverage](https://img.shields.io/badge/coverage-35%25-yellow)]()
 [![Python](https://img.shields.io/badge/python-3.8+-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 
@@ -54,18 +55,21 @@ False positives avoided: 98.5%
 
 ## 🎯 Features
 
-### ✅ 43+ Production Operators
+### ✅ 57 Production Operators (35% of Polars API)
 Comprehensive coverage of Polars operations:
-- **Filtering** - Comparison operators, boolean logic
-- **Aggregations** - sum, mean, min, max, std, var
-- **Joins** - inner, left, right, outer, cross (with strategy testing)
-- **Nulls** - drop_nulls, fill_null, is_null handling
-- **Data Integrity** - unique, distinct, duplicates
-- **DateTime** - year, month, day, hour extraction
-- **Strings** - uppercase, lowercase, trim, replace
-- **Lists** - explosion, lengths, reverse, sort
-- **Window Functions** - over, partition_by, rolling
-- **And 20+ more...**
+- **Filtering** - filter, select, head, tail, slice, limit, gather
+- **Aggregations** - sum, mean, min, max, std, var, median, mode, skew, kurtosis
+- **Joins** - inner, left, outer, cross (with strategy testing)
+- **Nulls** - drop_nulls, fill_null, is_null, coalesce, interpolate
+- **Data Integrity** - unique, distinct, duplicates, is_duplicated
+- **DateTime** - year, month, day, hour extraction and truncation
+- **Strings** - case conversion, trim, replace, contains, starts_with, ends_with
+- **Lists** - explosion, length, contains, join, reverse, min, max
+- **Window Functions** - over, partition_by, rolling, shift
+- **Numerics** - floor, ceil, round, abs, sqrt, clip, arithmetic ops
+- **Structured** - with_columns, drop, rename, melt, pivot, unnest
+- **Advanced** - when/then, group_by_dynamic, apply, cache, dtype mutations
+- **[See full coverage status →](docs/POLARS_FUNCTION_COVERAGE.md)**
 
 ### 🧠 Smart Analysis (No False Positives)
 - **AST-aware filtering** - Knows Polars semantics
@@ -478,8 +482,9 @@ for category, count in results['mutation_categories'].items():
 
 ## 📖 Documentation
 
+- **[POLARS_FUNCTION_COVERAGE.md](docs/POLARS_FUNCTION_COVERAGE.md)** - Coverage status, roadmap, and which functions are supported
 - **[SMART_POLARS_APPROACH.md](docs/SMART_POLARS_APPROACH.md)** - Why smart filtering matters (6-10x faster)
-- **[POLARS_OPERATORS.md](docs/POLARS_OPERATORS.md)** - Complete operator reference (43+)
+- **[POLARS_OPERATORS.md](docs/POLARS_OPERATORS.md)** - Complete operator reference (57 operators)
 - **[INTEGRATION_GUIDE.md](docs/INTEGRATION_GUIDE.md)** - Setup, CI/CD, best practices
 
 ---
