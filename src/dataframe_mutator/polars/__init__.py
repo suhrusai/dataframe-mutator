@@ -7,6 +7,10 @@ from .operators import (
     PolarsGroupByMutation,
     PolarsJoinMutation,
     PolarsSortMutation,
+    PolarsWithColumnsMutation,
+    PolarsDropColumnsMutation,
+    PolarsRenameMutation,
+    PolarsDistinctMutation,
     get_all_polars_operators,
 )
 
@@ -17,5 +21,9 @@ __all__ = [
     "PolarsGroupByMutation",
     "PolarsJoinMutation",
     "PolarsSortMutation",
+    "PolarsWithColumnsMutation",
+    "PolarsDropColumnsMutation",
+    "PolarsRenameMutation",
+    "PolarsDistinctMutation",
     "get_all_polars_operators",
 ]
