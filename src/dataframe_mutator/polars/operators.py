@@ -619,6 +619,188 @@ class PolarsWhenThenMutation(MutationOperator):
         return code
 
 
+class PolarsDatetimeOperationsMutation(MutationOperator):
+    """Mutate Polars datetime operations to test temporal logic."""
+
+    name = "polars_datetime_ops_mutation"
+    description = "Mutates datetime operations: year/month/day extraction, etc."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars datetime operation."""
+        if isinstance(node, str):
+            datetime_ops = (
+                ".dt.year()", ".dt.month()", ".dt.day()",
+                ".dt.hour()", ".dt.minute()", ".dt.second()",
+                ".dt.strftime(", ".dt.truncate(", ".dt.round("
+            )
+            return any(op in node for op in datetime_ops)
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply datetime mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate datetime operations."""
+        mutations = [
+            (r"\.dt\.year\(\)", ".dt.month()"),
+            (r"\.dt\.month\(\)", ".dt.year()"),
+            (r"\.dt\.day\(\)", ".dt.month()"),
+            (r"\.dt\.hour\(\)", ".dt.minute()"),
+            (r"\.dt\.minute\(\)", ".dt.second()"),
+            (r"\.dt\.second\(\)", ".dt.hour()"),
+            (r'\.dt\.truncate\(\s*["\'](\w+)["\']\)', r'.dt.round( "\1")'),
+            (r'\.dt\.round\(\s*["\'](\w+)["\']\)', r'.dt.truncate( "\1")'),
+        ]
+
+        for pattern, replacement in mutations:
+            if re.search(pattern, code):
+                return re.sub(pattern, replacement, code, count=1)
+        return code
+
+
+class PolarsNumericalOperationsMutation(MutationOperator):
+    """Mutate Polars numerical operations to test numeric transformations."""
+
+    name = "polars_numerical_ops_mutation"
+    description = "Mutates numerical operations: abs, sqrt, round, etc."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars numerical operation."""
+        if isinstance(node, str):
+            num_ops = (
+                ".abs()", ".sqrt()", ".round(", ".floor()", ".ceil()",
+                ".clip(", ".log(", ".log10(", ".exp()", ".sin(", ".cos("
+            )
+            return any(op in node for op in num_ops)
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply numerical mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate numerical operations."""
+        mutations = [
+            (r"\.abs\(\)", ".sqrt()"),
+            (r"\.sqrt\(\)", ".abs()"),
+            (r"\.floor\(\)", ".ceil()"),
+            (r"\.ceil\(\)", ".floor()"),
+            (r"\.round\((\d+)\)", r".floor()"),
+            (r"\.log\(\)", ".exp()"),
+            (r"\.exp\(\)", ".log()"),
+        ]
+
+        for pattern, replacement in mutations:
+            if re.search(pattern, code):
+                return re.sub(pattern, replacement, code, count=1)
+        return code
+
+
+class PolarsListOperationsMutation(MutationOperator):
+    """Mutate Polars list operations to test list manipulations."""
+
+    name = "polars_list_ops_mutation"
+    description = "Mutates list operations: lengths, reverse, sort, etc."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars list operation."""
+        if isinstance(node, str):
+            list_ops = (
+                ".list.len()", ".list.lengths()", ".list.reverse()",
+                ".list.sort(", ".list.unique(", ".list.max()", ".list.min()",
+                ".list.sum(", ".list.mean(", ".list.contains("
+            )
+            return any(op in node for op in list_ops)
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply list mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate list operations."""
+        mutations = [
+            (r"\.list\.len\(\)", ".list.max()"),
+            (r"\.list\.lengths\(\)", ".list.sum()"),
+            (r"\.list\.reverse\(\)", ""),
+            (r"\.list\.sort\(\)", ".list.reverse()"),
+            (r"\.list\.max\(\)", ".list.min()"),
+            (r"\.list\.min\(\)", ".list.max()"),
+            (r"\.list\.unique\(\)", ""),
+        ]
+
+        for pattern, replacement in mutations:
+            if re.search(pattern, code):
+                return re.sub(pattern, replacement, code, count=1)
+        return code
+
+
+class PolarsArithmeticOperatorMutation(MutationOperator):
+    """Mutate Polars arithmetic operations to test math logic."""
+
+    name = "polars_arithmetic_mutation"
+    description = "Mutates arithmetic operators: + to -, * to /, etc."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars arithmetic expression."""
+        if isinstance(node, str):
+            # Look for arithmetic in expressions
+            return bool(
+                re.search(r"pl\.col\(['\"]([^'\"]+)['\"]\)\s*[\+\-\*/]", node) or
+                re.search(r"pl\.lit\(\d+\)\s*[\+\-\*/]", node)
+            )
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply arithmetic mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate arithmetic operators."""
+        mutations = [
+            (r"(\)\s*)\+(\s*pl\.)", r"\1-\2"),
+            (r"(\)\s*)-(\s*pl\.)", r"\1+\2"),
+            (r"(\)\s*)\*(\s*pl\.)", r"\1/\2"),
+            (r"(\)\s*)/(\s*pl\.)", r"\1*\2"),
+        ]
+
+        for pattern, replacement in mutations:
+            if re.search(pattern, code):
+                return re.sub(pattern, replacement, code, count=1)
+        return code
+
+
+class PolarsBooleanOperatorMutation(MutationOperator):
+    """Mutate Polars boolean operations to test logical operators."""
+
+    name = "polars_boolean_mutation"
+    description = "Mutates boolean operators: & to |, ~ negation."
+
+    def matches(self, node) -> bool:
+        """Check if this is a Polars boolean operation."""
+        if isinstance(node, str):
+            return bool(re.search(r"[\|&~]", node)) and "filter" in node
+        return False
+
+    def mutate(self, node) -> str:
+        """Apply boolean mutations."""
+        return self.mutate_code(node)
+
+    def mutate_code(self, code: str) -> str:
+        """Mutate boolean operators."""
+        mutations = [
+            (r"([^!])\|([^=])", r"\1&\2"),
+            (r"([^!=]&)", r"\1|"),
+            (r"~\s*\(", r"("),
+        ]
+
+        for pattern, replacement in mutations:
+            if re.search(pattern, code):
+                return re.sub(pattern, replacement, code, count=1)
+        return code
+
+
 def get_all_polars_operators() -> List[Type[MutationOperator]]:
     """Get all available Polars mutation operators."""
     return [
@@ -642,4 +824,9 @@ def get_all_polars_operators() -> List[Type[MutationOperator]]:
         PolarsMeltMutation,
         PolarsPivotMutation,
         PolarsWhenThenMutation,
+        PolarsDatetimeOperationsMutation,
+        PolarsNumericalOperationsMutation,
+        PolarsListOperationsMutation,
+        PolarsArithmeticOperatorMutation,
+        PolarsBooleanOperatorMutation,
     ]

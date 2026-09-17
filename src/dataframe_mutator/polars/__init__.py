@@ -21,6 +21,11 @@ from .operators import (
     PolarsMeltMutation,
     PolarsPivotMutation,
     PolarsWhenThenMutation,
+    PolarsDatetimeOperationsMutation,
+    PolarsNumericalOperationsMutation,
+    PolarsListOperationsMutation,
+    PolarsArithmeticOperatorMutation,
+    PolarsBooleanOperatorMutation,
     get_all_polars_operators,
 )
 
@@ -45,5 +50,10 @@ __all__ = [
     "PolarsMeltMutation",
     "PolarsPivotMutation",
     "PolarsWhenThenMutation",
+    "PolarsDatetimeOperationsMutation",
+    "PolarsNumericalOperationsMutation",
+    "PolarsListOperationsMutation",
+    "PolarsArithmeticOperatorMutation",
+    "PolarsBooleanOperatorMutation",
     "get_all_polars_operators",
 ]
