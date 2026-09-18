@@ -35,6 +35,8 @@ jobs:
         shell: bash
         run: |
           cd test_benchmark
+          # Install test_benchmark package so pytest can import src/
+          pip install -e . > /dev/null 2>&1
           echo "[Run ${{ matrix.run }}/10] Starting vanilla mutmut benchmark..."
 
           START=$(date +%s%N)
@@ -99,6 +101,8 @@ jobs:
         shell: bash
         run: |
           cd test_benchmark
+          # Install test_benchmark package so pytest can import src/
+          pip install -e . > /dev/null 2>&1
           echo "[Run ${{ matrix.run }}/10] Starting plugin mutmut benchmark..."
 
           START=$(date +%s%N)
