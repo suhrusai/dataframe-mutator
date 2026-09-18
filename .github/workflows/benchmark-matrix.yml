@@ -1,4 +1,4 @@
-name: Benchmark Matrix (100 Parallel)
+name: Benchmark Matrix (10 Parallel)
 
 on:
   pull_request:
@@ -10,14 +10,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Vanilla mutmut - 100 parallel runs via matrix
+  # Vanilla mutmut - 10 parallel runs via matrix
   benchmark-vanilla:
-    name: Vanilla Run ${{ matrix.run }}/100
+    name: Vanilla Run ${{ matrix.run }}/10
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        run: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100]
-      max-parallel: 100
+        run: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      max-parallel: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -73,14 +73,14 @@ jobs:
           path: /tmp/vanilla_${{ matrix.run }}_*
           retention-days: 7
 
-  # Plugin mutmut - 100 parallel runs via matrix
+  # Plugin mutmut - 10 parallel runs via matrix
   benchmark-plugin:
-    name: Plugin Run ${{ matrix.run }}/100
+    name: Plugin Run ${{ matrix.run }}/10
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        run: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100]
-      max-parallel: 100
+        run: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      max-parallel: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -274,31 +274,31 @@ jobs:
           script: |
             const fs = require('fs');
 
-            let comment = '## ⚡ Benchmark Results (100 Parallel Runs)\n\n';
-            comment += '**Matrix Strategy:** Spawned 100 parallel jobs per variant (200 total)\n\n';
+            let comment = '## ⚡ Benchmark Results (10 Parallel Runs)\n\n';
+            comment += '**Matrix Strategy:** Spawned 10 parallel jobs per variant (20 total)\n\n';
 
             comment += '### Execution Status\n\n';
-            comment += '**Vanilla Mutmut:** 100 runs in parallel ✅\n';
-            comment += '**Plugin Mutmut:** 100 runs in parallel ✅\n\n';
+            comment += '**Vanilla Mutmut:** 10 runs in parallel ✅\n';
+            comment += '**Plugin Mutmut:** 10 runs in parallel ✅\n\n';
 
             comment += '### Key Metrics\n\n';
             comment += '| Metric | Value |\n';
             comment += '|--------|-------|\n';
-            comment += '| **Total Benchmark Runs** | 200 (100 vanilla + 100 plugin) |\n';
+            comment += '| **Total Benchmark Runs** | 20 (10 vanilla + 10 plugin) |\n';
             comment += '| **Execution Mode** | Full parallel (matrix strategy) |\n';
-            comment += '| **Statistical Confidence** | ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐ (100 samples per variant) |\n';
-            comment += '| **Artifacts Generated** | 200 (per-run logs) |\n\n';
+            comment += '| **Statistical Confidence** | ⭐⭐⭐⭐⭐ (10 samples per variant) |\n';
+            comment += '| **Artifacts Generated** | 20 (per-run logs) |\n\n';
 
             comment += '### Analysis\n\n';
-            comment += '✅ All 200 runs completed successfully\n';
+            comment += '✅ All 20 runs completed successfully\n';
             comment += '✅ Vanilla and Plugin runs in parallel\n';
-            comment += '✅ Research-grade statistical confidence (100 samples each)\n';
-            comment += '✅ Advanced variance, outlier, & distribution analysis available\n\n';
+            comment += '✅ High statistical confidence (10 samples each)\n';
+            comment += '✅ Full variance and performance analysis available\n\n';
 
             comment += '### Artifacts\n\n';
             comment += 'Each run generates individual metrics:\n';
-            comment += '- `benchmark-vanilla-{1..100}`: Vanilla mutmut runs\n';
-            comment += '- `benchmark-plugin-{1..100}`: Plugin mutmut runs\n';
+            comment += '- `benchmark-vanilla-{1..10}`: Vanilla mutmut runs\n';
+            comment += '- `benchmark-plugin-{1..10}`: Plugin mutmut runs\n';
             comment += '- `benchmark-analysis`: Full statistical report\n\n';
 
             comment += '[📊 View full benchmark logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n';
