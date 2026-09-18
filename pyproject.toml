@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dataframe-mutator"
-version = "0.1.0"
+version = "0.1.1"
 description = "Production-grade mutation testing for Polars dataframes. Validate test suite quality by detecting which mutations your tests catch."
 readme = "README.md"
 requires-python = ">=3.8"

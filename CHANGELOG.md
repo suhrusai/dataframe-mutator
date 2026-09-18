@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2025-09-17
+
+### Added
+- **GitHub Actions CI/CD**
+  - Automated test runs on Python 3.8-3.12
+  - Code quality checks (ruff, black, mypy)
+  - Coverage reporting to Codecov
+  - Example project testing
+
+- **Project Documentation**
+  - CONTRIBUTING.md with developer guidelines
+  - SECURITY.md for vulnerability reporting
+  - CODE_OF_CONDUCT.md (Contributor Covenant)
+  - CHANGELOG.md for release tracking
+
+- **Performance Benchmarks**
+  - BENCHMARKS.md documenting 6-10x speedup
+  - Comparison vs vanilla mutmut
+  - Scaling analysis
+
+- **Example Showcase**
+  - Sales ETL Pipeline example
+  - 28 comprehensive tests
+  - Detailed walkthrough documentation
+
+### Improved
+- Simplified README for better PyPI presentation
+- Added CI status badge
+- Enhanced project professionalism
+
 ## [0.1.0] - 2025-09-17
 
 ### Added
