@@ -76,26 +76,21 @@ jobs:
         run: |
           mkdir -p benchmark-reports
 
-          # Extract test counts
+          # Extract test counts and times
           TPCH_PASSED=$(grep -oP '(?<= )\d+(?= passed)' tpch-results.txt | head -1 || echo "0")
           COMP_PASSED=$(grep -oP '(?<= )\d+(?= passed)' comprehensive-results.txt | head -1 || echo "0")
 
-          # Extract slowest tests
-          echo "Platform: ${{ matrix.os }}" > benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
-          echo "Architecture: ${{ matrix.arch }}" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
-          echo "" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
-          echo "## TPC-H Results" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
-          echo "Tests passed: $TPCH_PASSED" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
-          echo "" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
-          echo "Slowest tests:" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
-          grep -A 20 "slowest durations" tpch-results.txt >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt || echo "No duration info" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
-
-          echo "" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
-          echo "## Comprehensive Operations Results" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
-          echo "Tests passed: $COMP_PASSED" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
-          echo "" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
-          echo "Slowest tests:" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
-          grep -A 20 "slowest durations" comprehensive-results.txt >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt || echo "No duration info" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
+          # Save metrics
+          {
+            echo "Platform: ${{ matrix.os }}"
+            echo "Architecture: ${{ matrix.arch }}"
+            echo ""
+            echo "## TPC-H Results"
+            echo "Tests passed: $TPCH_PASSED"
+            echo ""
+            echo "## Comprehensive Operations Results"
+            echo "Tests passed: $COMP_PASSED"
+          } > benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
 
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
@@ -120,7 +115,15 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: all-results/
-          pattern: benchmark-results-*
+
+      - name: Debug artifact structure
+        shell: bash
+        run: |
+          echo "=== Artifact Directory Structure ==="
+          find all-results/ -type f -name "*.txt" | head -20
+          echo ""
+          echo "=== Sample file content ==="
+          find all-results/ -type f -name "*metrics.txt" -print -exec cat {} \; | head -50
 
       - name: Comment PR with benchmark results
         uses: actions/github-script@v7
@@ -138,82 +141,72 @@ jobs:
               'ubuntu-24.04-arm': '🐧 Linux ARM64'
             };
 
-            // Collect results from all platforms
-            const resultsDir = 'all-results/';
             let comment = '## 📊 Benchmark Results\n\n';
             comment += '**TPC-H + Extensive Operations Benchmark**\n\n';
             comment += '| Platform | Architecture | TPC-H | Ops | Status |\n';
             comment += '|----------|--------------|-------|-----|--------|\n';
 
-            const platformResults = {};
+            const resultsDir = 'all-results';
+            const platformData = {};
 
             try {
-              const dirs = fs.readdirSync(resultsDir);
-              dirs.forEach(dir => {
-                const metricsFile = path.join(resultsDir, dir, 'benchmark-results-' + dir.split('-').slice(2).join('-') + '-metrics.txt');
-                if (fs.existsSync(metricsFile)) {
-                  const content = fs.readFileSync(metricsFile, 'utf8');
+              // Find all metrics files
+              const findMetricsFiles = (dir) => {
+                const files = [];
+                const items = fs.readdirSync(dir, { withFileTypes: true });
 
-                  // Extract platform and arch from dirname
-                  const parts = dir.split('-');
-                  if (parts.length >= 3) {
-                    const os = parts.slice(2, -1).join('-');
-                    const arch = parts[parts.length - 1];
-                    const platformName = platforms[os] || os;
-
-                    // Extract test counts
-                    const tphcMatch = content.match(/TPC-H Results[\s\S]*?Tests passed: (\d+)/);
-                    const compMatch = content.match(/Comprehensive Operations Results[\s\S]*?Tests passed: (\d+)/);
-
-                    const tpch = tphcMatch ? tphcMatch[1] : '?';
-                    const comp = compMatch ? compMatch[1] : '?';
-
-                    comment += `| ${platformName} | ${arch} | ${tpch} tests | ${comp} tests | ✅ Passed |\n`;
-
-                    // Store for execution time details
-                    platformResults[platformName] = {
-                      arch: arch,
-                      tpch: tpch,
-                      comp: comp,
-                      content: content
-                    };
+                for (const item of items) {
+                  const fullPath = path.join(dir, item.name);
+                  if (item.isDirectory()) {
+                    files.push(...findMetricsFiles(fullPath));
+                  } else if (item.name.endsWith('-metrics.txt')) {
+                    files.push(fullPath);
                   }
+                }
+                return files;
+              };
+
+              const metricsFiles = findMetricsFiles(resultsDir);
+              console.log('Found metrics files:', metricsFiles);
+
+              metricsFiles.forEach(file => {
+                const content = fs.readFileSync(file, 'utf8');
+                console.log(`Processing ${file}:`);
+
+                // Parse metrics file
+                const platformMatch = content.match(/Platform: (.+)/);
+                const archMatch = content.match(/Architecture: (.+)/);
+                const tpchMatch = content.match(/TPC-H Results[\s\S]*?Tests passed: (\d+)/);
+                const compMatch = content.match(/Comprehensive Operations Results[\s\S]*?Tests passed: (\d+)/);
+
+                if (platformMatch && archMatch) {
+                  const os = platformMatch[1].trim();
+                  const arch = archMatch[1].trim();
+                  const tpch = tphcMatch ? tphcMatch[1] : '?';
+                  const comp = compMatch ? compMatch[1] : '?';
+                  const platformName = platforms[os] || os;
+
+                  platformData[`${os}-${arch}`] = {
+                    os,
+                    arch,
+                    platformName,
+                    tpch,
+                    comp
+                  };
                 }
               });
-            } catch (e) {
-              console.log('Results parsing: ' + e.message);
-            }
 
-            // Add execution time details
-            if (Object.keys(platformResults).length > 0) {
-              comment += '\n### Execution Times\n\n';
-
-              for (const [platform, results] of Object.entries(platformResults)) {
-                comment += `**${platform}** (${results.arch}):\n`;
-
-                // Extract slowest tests
-                const slowMatch = results.content.match(/slowest durations[\s\S]*?\n([\s\S]*?)(?:\n\n|$)/);
-                if (slowMatch && slowMatch[1].trim()) {
-                  const tests = slowMatch[1]
-                    .trim()
-                    .split('\n')
-                    .slice(0, 5)  // Show top 5 slowest
-                    .map(line => line.trim())
-                    .filter(line => line.length > 0);
-
-                  if (tests.length > 0) {
-                    comment += '```\n' + tests.join('\n') + '\n```\n';
-                  } else {
-                    comment += 'All tests completed successfully\n';
-                  }
-                } else {
-                  comment += 'Tests completed\n';
-                }
-                comment += '\n';
+              // Add table rows
+              for (const [key, data] of Object.entries(platformData)) {
+                comment += `| ${data.platformName} | ${data.arch} | ${data.tpch} tests | ${data.comp} tests | ✅ Passed |\n`;
               }
+
+            } catch (e) {
+              console.log('Error processing results:', e.message);
+              comment += '| Error | - | - | - | ⚠️ See logs |\n';
             }
 
-            comment += '### Coverage\n\n';
+            comment += '\n### Coverage\n\n';
             comment += '- ✅ TPC-H (28 tests, 3.36M rows, industry standard)\n';
             comment += '- ✅ Extensive Operations (63 tests, all 109 Polars operators)\n';
             comment += '- ✅ Mutation Testing validation\n';
