@@ -39,9 +39,20 @@ jobs:
           pip install -e . > /dev/null 2>&1
           echo "[Run ${{ matrix.run }}/10] Starting vanilla mutmut benchmark..."
 
+          # Debug: verify files and tests exist
+          echo "Source files:"
+          find src -name "*.py" | head -10
+          echo "Test files:"
+          find tests -name "test_*.py" | head -10
+          echo "Running pytest first to verify tests work:"
+          python -m pytest tests/ -v --tb=short 2>&1 | head -30
+
           START=$(date +%s%N)
           mutmut run src/ --tests-dir tests/ --no-progress > /tmp/vanilla_${{ matrix.run }}.log 2>&1 || true
           END=$(date +%s%N)
+
+          echo "Mutmut output:"
+          cat /tmp/vanilla_${{ matrix.run }}.log
 
           DURATION_MS=$(( (END - START) / 1000000 ))
           DURATION_S=$(echo "scale=3; $DURATION_MS / 1000" | bc)
@@ -103,11 +114,15 @@ jobs:
           cd test_benchmark
           # Install test_benchmark package so pytest can import src/
           pip install -e . > /dev/null 2>&1
+          pip install -e "../.[polars]" > /dev/null 2>&1
           echo "[Run ${{ matrix.run }}/10] Starting plugin mutmut benchmark..."
 
           START=$(date +%s%N)
           mutmut run src/ --tests-dir tests/ --no-progress > /tmp/plugin_${{ matrix.run }}.log 2>&1 || true
           END=$(date +%s%N)
+
+          echo "Mutmut output:"
+          cat /tmp/plugin_${{ matrix.run }}.log
 
           DURATION_MS=$(( (END - START) / 1000000 ))
           DURATION_S=$(echo "scale=3; $DURATION_MS / 1000" | bc)
