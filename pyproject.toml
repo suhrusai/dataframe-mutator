@@ -8,7 +8,7 @@ version = "0.2.1"
 description = "Production-grade mutation testing for Polars dataframes. Validate test suite quality by detecting which mutations your tests catch."
 readme = "README.md"
 requires-python = ">=3.8"
-license = "MIT"
+license = {text = "MIT"}
 authors = [
     {name = "Dataframe Mutator Contributors", email = "suhrusai@gmail.com"}
 ]
