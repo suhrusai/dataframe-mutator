@@ -44,7 +44,7 @@ class BenchmarkRunner:
 
             tester = SmartPolarsTestRunner(
                 test_command=self.test_command,
-                parallel=False  # Single-threaded for fair comparison
+                skip_low_value_mutations=True
             )
 
             results = tester.analyze_mutation_efficiency(str(self.src_file))

@@ -33,10 +33,6 @@ def analyze(source, tests, config, output, threshold, parallel, workers, save_ba
     # Override with CLI arguments
     if threshold:
         cfg.mutation_threshold = threshold
-    if not parallel:
-        cfg.parallel = False
-    if workers:
-        cfg.num_workers = workers
     cfg.output_format = output
     cfg.source_files = list(source)
     cfg.test_command = f"pytest {tests}"
@@ -47,8 +43,7 @@ def analyze(source, tests, config, output, threshold, parallel, workers, save_ba
     try:
         tester = SmartPolarsTestRunner(
             test_command=cfg.test_command,
-            parallel=cfg.parallel,
-            num_workers=cfg.num_workers
+            skip_low_value_mutations=True
         )
 
         all_results = {}
