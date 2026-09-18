@@ -29,14 +29,18 @@ Tests (Ubuntu Latest, Python 3.9)
 Tests (Ubuntu Latest, Python 3.10)
 Tests (Ubuntu Latest, Python 3.11)
 Tests (Ubuntu Latest, Python 3.12)
-Tests (macOS 15 Intel, Python 3.11)
-Tests (Windows Latest, Python 3.11)
-Tests (Ubuntu 24.04 ARM, Python 3.11)
+Tests (Ubuntu Latest, Python 3.13)
+Tests (Ubuntu Latest, Python 3.14)
+Tests (macOS 15 Intel, Python 3.14)
+Tests (Windows Latest, Python 3.14)
+Tests (Ubuntu 24.04 ARM, Python 3.14)
 Benchmarks (ubuntu-latest, x64)
 Benchmarks (macos-15-intel, x64)
 Benchmarks (windows-latest, x64)
 Benchmarks (ubuntu-24.04-arm, arm64)
 Comment PR Results
+Test with mutmut Public Suite
+Plugin Integration Test
 ```
 
 #### 3. Require branches to be up to date
@@ -73,16 +77,18 @@ Comment PR Results
 
 These jobs MUST ALL pass before PR can be merged:
 
-### Test Jobs (8 combinations)
+### Test Jobs (10 combinations)
 ```
 Tests-Linux-3.8
 Tests-Linux-3.9
 Tests-Linux-3.10
 Tests-Linux-3.11
 Tests-Linux-3.12
-Tests-macOS-3.11
-Tests-Windows-3.11
-Tests-ARM64-3.11
+Tests-Linux-3.13
+Tests-Linux-3.14
+Tests-macOS-3.14
+Tests-Windows-3.14
+Tests-ARM64-3.14
 ```
 
 Each test job validates:
@@ -116,8 +122,9 @@ Final step that comments results on PR.
 ## What This Ensures
 
 ✅ **No Merges Without Passing Checks**
-- All 8 test combinations must pass
+- All 10 test combinations must pass (Python 3.8-3.14)
 - All 4 benchmark suites must pass
+- All 2 integration test suites must pass (mutmut + plugin)
 - Results comment must post
 - Cannot merge with failing tests
 
@@ -168,13 +175,17 @@ Click "Require status checks to pass before merging":
   - `Tests (Ubuntu Latest, Python 3.10)`
   - `Tests (Ubuntu Latest, Python 3.11)`
   - `Tests (Ubuntu Latest, Python 3.12)`
-  - `Tests (macOS 15 Intel, Python 3.11)`
-  - `Tests (Windows Latest, Python 3.11)`
-  - `Tests (Ubuntu 24.04 ARM, Python 3.11)`
+  - `Tests (Ubuntu Latest, Python 3.13)`
+  - `Tests (Ubuntu Latest, Python 3.14)`
+  - `Tests (macOS 15 Intel, Python 3.14)`
+  - `Tests (Windows Latest, Python 3.14)`
+  - `Tests (Ubuntu 24.04 ARM, Python 3.14)`
   - `Benchmarks (ubuntu-latest, x64)`
   - `Benchmarks (macos-15-intel, x64)`
   - `Benchmarks (windows-latest, x64)`
   - `Benchmarks (ubuntu-24.04-arm, arm64)`
+  - `Run mutmut Public Test Suite`
+  - `Plugin Integration Test`
   - `Comment PR Results`
 
 ### Step 5: Save Rule

@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         include:
-          # Linux x64 - all Python versions
+          # Linux x64 - all Python versions (3.8 through latest)
           - os: ubuntu-latest
             python-version: "3.8"
             arch: x64
@@ -28,17 +28,23 @@ jobs:
           - os: ubuntu-latest
             python-version: "3.12"
             arch: x64
+          - os: ubuntu-latest
+            python-version: "3.13"
+            arch: x64
+          - os: ubuntu-latest
+            python-version: "3.14"
+            arch: x64
           # macOS Intel - latest Python
           - os: macos-15-intel
-            python-version: "3.11"
+            python-version: "3.14"
             arch: x64
           # Windows - latest Python
           - os: windows-latest
-            python-version: "3.11"
+            python-version: "3.14"
             arch: x64
           # Linux ARM64 - latest Python
           - os: ubuntu-24.04-arm
-            python-version: "3.11"
+            python-version: "3.14"
             arch: arm64
 
     runs-on: ${{ matrix.os }}

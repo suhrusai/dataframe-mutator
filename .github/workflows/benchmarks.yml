@@ -18,19 +18,19 @@ jobs:
         include:
           # Linux x64 (primary)
           - os: ubuntu-latest
-            python: '3.11'
+            python: '3.14'
             arch: x64
           # macOS Intel
           - os: macos-15-intel
-            python: '3.11'
+            python: '3.14'
             arch: x64
           # Windows x64
           - os: windows-latest
-            python: '3.11'
+            python: '3.14'
             arch: x64
           # Linux ARM64
           - os: ubuntu-24.04-arm
-            python: '3.11'
+            python: '3.14'
             arch: arm64
 
     runs-on: ${{ matrix.os }}
