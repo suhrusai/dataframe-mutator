@@ -811,7 +811,7 @@ class PolarsWindowFunctionsMutation(MutationOperator):
         """Check if this is a Polars window function."""
         if isinstance(node, str):
             return (".over(" in node or ".partition_by(" in node or
-                    "pl.col(" in node and ".sum().over" in node)
+                    ("pl.col(" in node and ".sum().over" in node))
         return False
 
     def mutate(self, node) -> str:
@@ -1732,7 +1732,7 @@ class PolarsRightJoinMutation(MutationOperator):
     def matches(self, node) -> bool:
         """Check if this is a right join operation."""
         if isinstance(node, str):
-            return ".right_join(" in node or ".join(" in node and "how='right'" in node
+            return ".right_join(" in node or (".join(" in node and "how='right'" in node)
         return False
 
     def mutate(self, node) -> str:
@@ -2790,7 +2790,7 @@ class PolarsSliceExpandMutation(MutationOperator):
 
     def matches(self, node) -> bool:
         if isinstance(node, str):
-            return ".slice(" in node and not "str.slice" in node
+            return ".slice(" in node and "str.slice" not in node
         return False
 
     def mutate(self, node) -> str:

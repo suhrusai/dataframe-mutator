@@ -1,11 +1,12 @@
 """Command-line interface for dataframe-mutator."""
 
-import click
 from pathlib import Path
-from typing import Optional
+
+import click
+
 from .config import MutationConfig
 from .polars import SmartPolarsTestRunner
-from .reports import HTMLReportGenerator, JSONExporter, BaselineTracker
+from .reports import BaselineTracker, HTMLReportGenerator, JSONExporter
 
 
 @click.group()
@@ -21,10 +22,8 @@ def cli():
 @click.option("--output", default="text", type=click.Choice(["text", "json", "html"]),
               help="Output format")
 @click.option("--threshold", type=float, help="Mutation score threshold")
-@click.option("--parallel", is_flag=True, default=True, help="Use parallel testing")
-@click.option("--workers", type=int, help="Number of parallel workers")
 @click.option("--save-baseline", is_flag=True, help="Save current results as baseline")
-def analyze(source, tests, config, output, threshold, parallel, workers, save_baseline):
+def analyze(source, tests, config, output, threshold, save_baseline):
     """Analyze mutation efficiency of your code."""
 
     # Load configuration
@@ -88,7 +87,7 @@ def analyze(source, tests, config, output, threshold, parallel, workers, save_ba
 
     except Exception as e:
         click.echo(f"[ERROR] Error: {e}", err=True)
-        raise click.Exit(1)
+        raise click.Exit(1) from e
 
 
 @cli.command()

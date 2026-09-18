@@ -1,9 +1,9 @@
 """Comprehensive tests for large ETL pipeline benchmarking."""
 
-import pytest
+
 import polars as pl
-import tempfile
-from pathlib import Path
+import pytest
+
 from benchmarks.large_pipeline import LargeETLPipeline
 
 

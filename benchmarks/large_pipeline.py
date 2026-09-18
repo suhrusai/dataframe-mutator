@@ -1,7 +1,8 @@
 """Large realistic Polars pipeline for comprehensive benchmarking."""
 
-import polars as pl
 from datetime import datetime, timedelta
+
+import polars as pl
 
 
 class LargeETLPipeline:

@@ -1,5 +1,5 @@
 """Benchmarking utilities for dataframe-mutator."""
 
-from .benchmark_suite import BenchmarkRunner, BenchmarkResult
+from .benchmark_suite import BenchmarkResult, BenchmarkRunner
 
-__all__ = ["BenchmarkRunner", "BenchmarkResult"]
+__all__ = ["BenchmarkResult", "BenchmarkRunner"]

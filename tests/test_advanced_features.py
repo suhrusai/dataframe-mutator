@@ -1,16 +1,15 @@
 """Tests for advanced features."""
 
-import pytest
 import json
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
+import pytest
 
 # Import new features
 from dataframe_mutator.config import MutationConfig
-from dataframe_mutator.reports import BaselineTracker, JSONExporter, HTMLReportGenerator
-from dataframe_mutator.integrations import (
-    CustomOperatorRegistry, OperatorSuggester, SlackNotifier
-)
+from dataframe_mutator.integrations import CustomOperatorRegistry, OperatorSuggester, SlackNotifier
+from dataframe_mutator.reports import BaselineTracker, HTMLReportGenerator, JSONExporter
 
 
 class TestMutationConfig:
@@ -20,7 +19,7 @@ class TestMutationConfig:
         """Test creating default config."""
         config = MutationConfig()
         assert config.mutation_threshold == 0.85
-        assert config.parallel == True
+        assert config.parallel
         assert config.output_format == "text"
 
     def test_config_to_dict(self):
@@ -153,7 +152,8 @@ class TestCustomOperatorRegistry:
         """Test creating operator registry."""
         with tempfile.TemporaryDirectory() as tmpdir:
             registry = CustomOperatorRegistry(tmpdir)
-            assert Path(tmpdir).exists()
+            assert registry.registry_path.exists()
+            assert str(registry.registry_path) == str(Path(tmpdir))
 
 
 class TestSlackNotifier:

@@ -1,27 +1,28 @@
 """Tests for new Polars mutation operators (expanded function support)."""
 
 import pytest
+
 from dataframe_mutator.polars.operators import (
+    PolarsArgSortMutation,
     # High-priority operators
     PolarsCumSumMutation,
-    PolarsStringSplitMutation,
-    PolarsStringExtractMutation,
-    PolarsRightJoinMutation,
-    PolarsSemiJoinMutation,
-    PolarsMultiColumnGroupMutation,
-    PolarsStringPadMutation,
-    PolarsStringSliceMutation,
+    PolarsDuplicatedUniqueMutation,
+    PolarsFoldReduceMutation,
+    PolarsForwardFillMutation,
+    PolarsLazyCollectMutation,
     PolarsListMinMaxMutation,
     PolarsListSumMean,
-    PolarsLazyCollectMutation,
-    PolarsForwardFillMutation,
-    PolarsArgSortMutation,
-    PolarsFoldReduceMutation,
-    PolarsRowItemMutation,
-    PolarsDuplicatedUniqueMutation,
+    PolarsMultiColumnGroupMutation,
     PolarsNullCountMutation,
-    PolarsSerializationMutation,
+    PolarsRightJoinMutation,
+    PolarsRowItemMutation,
     PolarsScanReadMutation,
+    PolarsSemiJoinMutation,
+    PolarsSerializationMutation,
+    PolarsStringExtractMutation,
+    PolarsStringPadMutation,
+    PolarsStringSliceMutation,
+    PolarsStringSplitMutation,
 )
 
 

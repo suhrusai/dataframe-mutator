@@ -2,6 +2,6 @@
 
 __version__ = "0.1.0"
 
-from .core import MutationOperator, DataframeMutationTester
+from .core import DataframeMutationTester, MutationOperator
 
-__all__ = ["MutationOperator", "DataframeMutationTester", "__version__"]
+__all__ = ["DataframeMutationTester", "MutationOperator", "__version__"]

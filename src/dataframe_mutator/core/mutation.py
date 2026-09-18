@@ -1,9 +1,8 @@
 """Core mutation testing functionality for dataframe operations."""
 
-from abc import ABC, abstractmethod
-from typing import Any, Callable, List, Optional, Type, TypeVar, Union
 import subprocess
-import sys
+from abc import ABC, abstractmethod
+from typing import Any, List, Optional, Type, TypeVar
 
 T = TypeVar("T")
 
@@ -75,19 +74,15 @@ class DataframeMutationTester:
     def mutate_and_test(
         self,
         target_file: str,
-        test_command: Optional[str] = None,
     ) -> dict:
         """Execute mutation testing on target file.
 
         Args:
             target_file: Path to the file to mutate
-            test_command: Optional override test command
 
         Returns:
             Dictionary with mutation testing results
         """
-        cmd = test_command or self.test_command
-
         results = {
             "target": target_file,
             "total_mutations": 0,
