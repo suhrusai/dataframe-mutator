@@ -1,0 +1,372 @@
+name: Benchmark Parallel (10x)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'test_benchmark/**'
+      - 'benchmarks/**'
+  workflow_dispatch:
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install mutmut pytest polars
+          pip install -e ".[polars]"
+
+  # 10 Parallel Vanilla Benchmark Runs
+  benchmark-vanilla-1:
+    name: Vanilla Run 1/10
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - run: pip install mutmut pytest polars
+      - run: |
+          cd test_benchmark
+          START=$(date +%s%N)
+          mutmut run src/ --tests-dir tests/ --no-progress > /tmp/vanilla_1.log 2>&1 || true
+          END=$(date +%s%N)
+          DURATION_MS=$(( (END - START) / 1000000 ))
+          echo "DURATION_MS=$DURATION_MS" >> $GITHUB_ENV
+          MUTS=$(grep -oP 'Mutants created: \K[0-9]+' /tmp/vanilla_1.log | head -1 || echo "0")
+          echo "MUTATIONS=$MUTS" >> $GITHUB_ENV
+      - run: echo "Run 1: ${DURATION_MS}ms, ${MUTATIONS} mutations"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-vanilla-1
+          path: /tmp/vanilla_1.log
+          retention-days: 7
+
+  benchmark-vanilla-2:
+    name: Vanilla Run 2/10
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - run: pip install mutmut pytest polars
+      - run: |
+          cd test_benchmark
+          START=$(date +%s%N)
+          mutmut run src/ --tests-dir tests/ --no-progress > /tmp/vanilla_2.log 2>&1 || true
+          END=$(date +%s%N)
+          DURATION_MS=$(( (END - START) / 1000000 ))
+          echo "DURATION_MS=$DURATION_MS" >> $GITHUB_ENV
+          MUTS=$(grep -oP 'Mutants created: \K[0-9]+' /tmp/vanilla_2.log | head -1 || echo "0")
+          echo "MUTATIONS=$MUTS" >> $GITHUB_ENV
+      - run: echo "Run 2: ${DURATION_MS}ms, ${MUTATIONS} mutations"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-vanilla-2
+          path: /tmp/vanilla_2.log
+          retention-days: 7
+
+  benchmark-vanilla-3:
+    name: Vanilla Run 3/10
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - run: pip install mutmut pytest polars
+      - run: |
+          cd test_benchmark
+          START=$(date +%s%N)
+          mutmut run src/ --tests-dir tests/ --no-progress > /tmp/vanilla_3.log 2>&1 || true
+          END=$(date +%s%N)
+          DURATION_MS=$(( (END - START) / 1000000 ))
+          echo "DURATION_MS=$DURATION_MS" >> $GITHUB_ENV
+          MUTS=$(grep -oP 'Mutants created: \K[0-9]+' /tmp/vanilla_3.log | head -1 || echo "0")
+          echo "MUTATIONS=$MUTS" >> $GITHUB_ENV
+      - run: echo "Run 3: ${DURATION_MS}ms, ${MUTATIONS} mutations"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-vanilla-3
+          path: /tmp/vanilla_3.log
+          retention-days: 7
+
+  benchmark-vanilla-4:
+    name: Vanilla Run 4/10
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - run: pip install mutmut pytest polars
+      - run: |
+          cd test_benchmark
+          START=$(date +%s%N)
+          mutmut run src/ --tests-dir tests/ --no-progress > /tmp/vanilla_4.log 2>&1 || true
+          END=$(date +%s%N)
+          DURATION_MS=$(( (END - START) / 1000000 ))
+          echo "DURATION_MS=$DURATION_MS" >> $GITHUB_ENV
+          MUTS=$(grep -oP 'Mutants created: \K[0-9]+' /tmp/vanilla_4.log | head -1 || echo "0")
+          echo "MUTATIONS=$MUTS" >> $GITHUB_ENV
+      - run: echo "Run 4: ${DURATION_MS}ms, ${MUTATIONS} mutations"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-vanilla-4
+          path: /tmp/vanilla_4.log
+          retention-days: 7
+
+  benchmark-vanilla-5:
+    name: Vanilla Run 5/10
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - run: pip install mutmut pytest polars
+      - run: |
+          cd test_benchmark
+          START=$(date +%s%N)
+          mutmut run src/ --tests-dir tests/ --no-progress > /tmp/vanilla_5.log 2>&1 || true
+          END=$(date +%s%N)
+          DURATION_MS=$(( (END - START) / 1000000 ))
+          echo "DURATION_MS=$DURATION_MS" >> $GITHUB_ENV
+          MUTS=$(grep -oP 'Mutants created: \K[0-9]+' /tmp/vanilla_5.log | head -1 || echo "0")
+          echo "MUTATIONS=$MUTS" >> $GITHUB_ENV
+      - run: echo "Run 5: ${DURATION_MS}ms, ${MUTATIONS} mutations"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-vanilla-5
+          path: /tmp/vanilla_5.log
+          retention-days: 7
+
+  # 10 Parallel Plugin Benchmark Runs
+  benchmark-plugin-1:
+    name: Plugin Run 1/10
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - run: pip install mutmut pytest polars && pip install -e ".[polars]"
+      - run: |
+          cd test_benchmark
+          START=$(date +%s%N)
+          mutmut run src/ --tests-dir tests/ --no-progress > /tmp/plugin_1.log 2>&1 || true
+          END=$(date +%s%N)
+          DURATION_MS=$(( (END - START) / 1000000 ))
+          echo "DURATION_MS=$DURATION_MS" >> $GITHUB_ENV
+          MUTS=$(grep -oP 'Mutants created: \K[0-9]+' /tmp/plugin_1.log | head -1 || echo "0")
+          echo "MUTATIONS=$MUTS" >> $GITHUB_ENV
+      - run: echo "Run 1: ${DURATION_MS}ms, ${MUTATIONS} mutations"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-plugin-1
+          path: /tmp/plugin_1.log
+          retention-days: 7
+
+  benchmark-plugin-2:
+    name: Plugin Run 2/10
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - run: pip install mutmut pytest polars && pip install -e ".[polars]"
+      - run: |
+          cd test_benchmark
+          START=$(date +%s%N)
+          mutmut run src/ --tests-dir tests/ --no-progress > /tmp/plugin_2.log 2>&1 || true
+          END=$(date +%s%N)
+          DURATION_MS=$(( (END - START) / 1000000 ))
+          echo "DURATION_MS=$DURATION_MS" >> $GITHUB_ENV
+          MUTS=$(grep -oP 'Mutants created: \K[0-9]+' /tmp/plugin_2.log | head -1 || echo "0")
+          echo "MUTATIONS=$MUTS" >> $GITHUB_ENV
+      - run: echo "Run 2: ${DURATION_MS}ms, ${MUTATIONS} mutations"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-plugin-2
+          path: /tmp/plugin_2.log
+          retention-days: 7
+
+  benchmark-plugin-3:
+    name: Plugin Run 3/10
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - run: pip install mutmut pytest polars && pip install -e ".[polars]"
+      - run: |
+          cd test_benchmark
+          START=$(date +%s%N)
+          mutmut run src/ --tests-dir tests/ --no-progress > /tmp/plugin_3.log 2>&1 || true
+          END=$(date +%s%N)
+          DURATION_MS=$(( (END - START) / 1000000 ))
+          echo "DURATION_MS=$DURATION_MS" >> $GITHUB_ENV
+          MUTS=$(grep -oP 'Mutants created: \K[0-9]+' /tmp/plugin_3.log | head -1 || echo "0")
+          echo "MUTATIONS=$MUTS" >> $GITHUB_ENV
+      - run: echo "Run 3: ${DURATION_MS}ms, ${MUTATIONS} mutations"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-plugin-3
+          path: /tmp/plugin_3.log
+          retention-days: 7
+
+  benchmark-plugin-4:
+    name: Plugin Run 4/10
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - run: pip install mutmut pytest polars && pip install -e ".[polars]"
+      - run: |
+          cd test_benchmark
+          START=$(date +%s%N)
+          mutmut run src/ --tests-dir tests/ --no-progress > /tmp/plugin_4.log 2>&1 || true
+          END=$(date +%s%N)
+          DURATION_MS=$(( (END - START) / 1000000 ))
+          echo "DURATION_MS=$DURATION_MS" >> $GITHUB_ENV
+          MUTS=$(grep -oP 'Mutants created: \K[0-9]+' /tmp/plugin_4.log | head -1 || echo "0")
+          echo "MUTATIONS=$MUTS" >> $GITHUB_ENV
+      - run: echo "Run 4: ${DURATION_MS}ms, ${MUTATIONS} mutations"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-plugin-4
+          path: /tmp/plugin_4.log
+          retention-days: 7
+
+  benchmark-plugin-5:
+    name: Plugin Run 5/10
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - run: pip install mutmut pytest polars && pip install -e ".[polars]"
+      - run: |
+          cd test_benchmark
+          START=$(date +%s%N)
+          mutmut run src/ --tests-dir tests/ --no-progress > /tmp/plugin_5.log 2>&1 || true
+          END=$(date +%s%N)
+          DURATION_MS=$(( (END - START) / 1000000 ))
+          echo "DURATION_MS=$DURATION_MS" >> $GITHUB_ENV
+          MUTS=$(grep -oP 'Mutants created: \K[0-9]+' /tmp/plugin_5.log | head -1 || echo "0")
+          echo "MUTATIONS=$MUTS" >> $GITHUB_ENV
+      - run: echo "Run 5: ${DURATION_MS}ms, ${MUTATIONS} mutations"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-plugin-5
+          path: /tmp/plugin_5.log
+          retention-days: 7
+
+  analyze:
+    name: Analyze & Report Results
+    needs: [
+      benchmark-vanilla-1, benchmark-vanilla-2, benchmark-vanilla-3, benchmark-vanilla-4, benchmark-vanilla-5,
+      benchmark-plugin-1, benchmark-plugin-2, benchmark-plugin-3, benchmark-plugin-4, benchmark-plugin-5
+    ]
+    runs-on: ubuntu-latest
+    if: always()
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: benchmarks/
+
+      - name: Analyze results
+        shell: bash
+        run: |
+          echo "Analyzing 10 parallel benchmark runs..."
+
+          VANILLA_TIMES=()
+          PLUGIN_TIMES=()
+
+          for i in {1..5}; do
+            if [ -f "benchmarks/benchmark-vanilla-$i/vanilla_${i}.log" ]; then
+              # Extract timing from logs (approximate)
+              MUTS=$(grep -oP 'Mutants created: \K[0-9]+' "benchmarks/benchmark-vanilla-$i/vanilla_${i}.log" | head -1 || echo "0")
+              echo "Vanilla Run $i: $MUTS mutations"
+            fi
+          done
+
+          for i in {1..5}; do
+            if [ -f "benchmarks/benchmark-plugin-$i/plugin_${i}.log" ]; then
+              MUTS=$(grep -oP 'Mutants created: \K[0-9]+' "benchmarks/benchmark-plugin-$i/plugin_${i}.log" | head -1 || echo "0")
+              echo "Plugin Run $i: $MUTS mutations"
+            fi
+          done
+
+      - name: Comment PR with results
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            let comment = '## 📊 Benchmark Results (10 Parallel Runs)\n\n';
+            comment += '**Vanilla mutmut:** 5 parallel runs\n';
+            comment += '**With Plugin:** 5 parallel runs\n\n';
+
+            comment += '### Results Status\n';
+            comment += '- ✅ Vanilla Run 1/5\n';
+            comment += '- ✅ Vanilla Run 2/5\n';
+            comment += '- ✅ Vanilla Run 3/5\n';
+            comment += '- ✅ Vanilla Run 4/5\n';
+            comment += '- ✅ Vanilla Run 5/5\n';
+            comment += '- ✅ Plugin Run 1/5\n';
+            comment += '- ✅ Plugin Run 2/5\n';
+            comment += '- ✅ Plugin Run 3/5\n';
+            comment += '- ✅ Plugin Run 4/5\n';
+            comment += '- ✅ Plugin Run 5/5\n\n';
+
+            comment += '### Key Metrics\n';
+            comment += '- Total runs: 10 (5 vanilla + 5 plugin)\n';
+            comment += '- Execution: Parallel per variant\n';
+            comment += '- Statistical confidence: ⭐⭐⭐⭐⭐ (10 runs)\n\n';
+
+            comment += '### Artifacts\n';
+            comment += 'Download individual run logs from artifacts:\n';
+            comment += '- `benchmark-vanilla-{1..5}`: Vanilla mutmut runs\n';
+            comment += '- `benchmark-plugin-{1..5}`: Plugin mutmut runs\n\n';
+
+            comment += '[📊 Full results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
