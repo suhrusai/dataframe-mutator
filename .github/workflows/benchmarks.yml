@@ -72,25 +72,38 @@ jobs:
 
       - name: Extract and save benchmark metrics
         if: always()
-        shell: bash
         run: |
           mkdir -p benchmark-reports
+          python << 'EXTRACT_METRICS'
+          import re
 
-          # Extract test counts and times
-          TPCH_PASSED=$(grep -oP '(?<= )\d+(?= passed)' tpch-results.txt | head -1 || echo "0")
-          COMP_PASSED=$(grep -oP '(?<= )\d+(?= passed)' comprehensive-results.txt | head -1 || echo "0")
+          def extract_passed_count(filename):
+              try:
+                  with open(filename, 'r') as f:
+                      content = f.read()
+                      match = re.search(r'(\d+)\s+passed', content)
+                      return match.group(1) if match else "0"
+              except:
+                  return "0"
 
-          # Save metrics
-          {
-            echo "Platform: ${{ matrix.os }}"
-            echo "Architecture: ${{ matrix.arch }}"
-            echo ""
-            echo "## TPC-H Results"
-            echo "Tests passed: $TPCH_PASSED"
-            echo ""
-            echo "## Comprehensive Operations Results"
-            echo "Tests passed: $COMP_PASSED"
-          } > benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
+          tpch_passed = extract_passed_count('tpch-results.txt')
+          comp_passed = extract_passed_count('comprehensive-results.txt')
+
+          metrics = f"""Platform: ${{ matrix.os }}
+          Architecture: ${{ matrix.arch }}
+
+          ## TPC-H Results
+          Tests passed: {tpch_passed}
+
+          ## Comprehensive Operations Results
+          Tests passed: {comp_passed}"""
+
+          with open('benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt', 'w') as f:
+              f.write(metrics)
+
+          print(f"✅ TPC-H: {tpch_passed} tests")
+          print(f"✅ Ops: {comp_passed} tests")
+          EXTRACT_METRICS
 
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
