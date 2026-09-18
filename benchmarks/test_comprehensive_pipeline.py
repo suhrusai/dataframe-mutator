@@ -4,11 +4,20 @@ These tests are designed to:
 1. Exercise ALL major Polars operator categories
 2. Kill mutations in diverse operation types
 3. Provide heavy workload for benchmarking mutmut performance
+
+Note: These tests require Polars and will be skipped on systems
+where Polars CPU detection fails (e.g., Windows development).
+They run successfully on Linux (GitHub Actions).
 """
 
 import pytest
-import polars as pl
-from comprehensive_polars_pipeline import ComprehensivePolarsWorkload
+
+# Skip all tests if Polars unavailable
+try:
+    import polars as pl
+    from comprehensive_polars_pipeline import ComprehensivePolarsWorkload
+except (ImportError, RuntimeError) as e:
+    pytest.skip(f"Skipping: Polars unavailable ({e})", allow_module_level=True)
 
 
 @pytest.fixture

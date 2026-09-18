@@ -1,10 +1,13 @@
 """Comprehensive tests for large ETL pipeline benchmarking."""
 
-
-import polars as pl
 import pytest
 
-from benchmarks.large_pipeline import LargeETLPipeline
+# Skip all tests if Polars unavailable
+try:
+    import polars as pl
+    from benchmarks.large_pipeline import LargeETLPipeline
+except (ImportError, RuntimeError) as e:
+    pytest.skip(f"Skipping: Polars unavailable ({e})", allow_module_level=True)
 
 
 @pytest.fixture

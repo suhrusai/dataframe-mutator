@@ -3,10 +3,14 @@
 These tests validate all operations in the production ETL pipeline.
 """
 
-import polars as pl
 import pytest
 
-from benchmarks.nyc_taxi_etl import NYCTaxiETL
+# Skip all tests if Polars unavailable
+try:
+    import polars as pl
+    from benchmarks.nyc_taxi_etl import NYCTaxiETL
+except (ImportError, RuntimeError) as e:
+    pytest.skip(f"Skipping: Polars unavailable ({e})", allow_module_level=True)
 
 
 @pytest.fixture

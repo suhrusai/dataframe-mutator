@@ -11,19 +11,28 @@ These tests are designed to:
 2. Provide heavy workload for mutmut benchmark
 3. Demonstrate plugin works alongside traditional mutmut
 4. Validate correctness of mixed workload processing
+
+Note: These tests require Polars and will be skipped on systems
+where Polars CPU detection fails (e.g., Windows development).
+They run successfully on Linux (GitHub Actions).
 """
 
 import pytest
-import polars as pl
-from mixed_workload_pipeline import (
-    PythonBusinessLogic,
-    PythonAlgorithms,
-    PolarsDataProcessing,
-    MixedWorkloadApplication,
-    EdgeCaseTests,
-    Order,
-    OrderStatus,
-)
+
+# Skip all tests if Polars unavailable
+try:
+    import polars as pl
+    from mixed_workload_pipeline import (
+        PythonBusinessLogic,
+        PythonAlgorithms,
+        PolarsDataProcessing,
+        MixedWorkloadApplication,
+        EdgeCaseTests,
+        Order,
+        OrderStatus,
+    )
+except (ImportError, RuntimeError) as e:
+    pytest.skip(f"Skipping: Polars unavailable ({e})", allow_module_level=True)
 
 
 # ============================================================================
