@@ -69,7 +69,7 @@ class TestMutationFilter:
         original = 'df.filter(pl.col("age") > 18)'
         mutated = 'df.filter(  pl.col("age") > 18  )'  # Extra spaces
         # This should be skipped since it's just whitespace
-        assert filter_obj.should_mutate(original, mutated) is True
+        assert filter_obj.should_mutate(original, mutated) is False
 
 
 class TestFilterConfiguration:
