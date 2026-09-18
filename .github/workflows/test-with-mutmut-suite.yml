@@ -135,17 +135,13 @@ jobs:
           pip install -e ".[dev,polars]"
           pip install mutmut
 
-      - name: Run plugin integration tests
+      - name: Run core plugin tests
         run: |
-          python -m pytest tests/test_mutmut_integration.py -v --tb=short
+          python -m pytest tests/ -v --tb=short
 
-      - name: Run comprehensive benchmark tests
+      - name: Run benchmark tests
         run: |
-          python -m pytest tests/test_comprehensive_pipeline.py -v --tb=short 2>&1 | head -100
-
-      - name: Run mixed workload tests
-        run: |
-          python -m pytest tests/test_mixed_workload.py -v --tb=short 2>&1 | head -100
+          python -m pytest benchmarks/ -v --tb=short 2>&1 | head -150
 
       - name: Test mutmut CLI with plugin
         run: |
