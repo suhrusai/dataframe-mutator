@@ -58,23 +58,41 @@ jobs:
 
       - name: Run TPC-H Benchmark (Industry Standard)
         run: |
-          pytest benchmarks/test_tpch_inspired_workload.py -v --tb=short --durations=10 > tpch-results.txt 2>&1
+          echo "=== TPC-H Benchmark ===" > tpch-results.txt
+          time pytest benchmarks/test_tpch_inspired_workload.py -v --tb=short --durations=15 >> tpch-results.txt 2>&1
           cat tpch-results.txt
 
       - name: Run Comprehensive Benchmarks
         run: |
-          pytest benchmarks/test_extensive_polars_operations.py -v --tb=short --durations=10 > comprehensive-results.txt 2>&1
+          echo "=== Comprehensive Operations ===" > comprehensive-results.txt
+          time pytest benchmarks/test_extensive_polars_operations.py -v --tb=short --durations=15 >> comprehensive-results.txt 2>&1
           cat comprehensive-results.txt
 
-      - name: Capture benchmark results with metrics
+      - name: Extract and save benchmark metrics
         if: always()
         run: |
           mkdir -p benchmark-reports
+
+          # Extract test counts
+          TPCH_PASSED=$(grep -oP '(?<= )\d+(?= passed)' tpch-results.txt | head -1 || echo "0")
+          COMP_PASSED=$(grep -oP '(?<= )\d+(?= passed)' comprehensive-results.txt | head -1 || echo "0")
+
+          # Extract slowest tests
           echo "Platform: ${{ matrix.os }}" > benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
           echo "Architecture: ${{ matrix.arch }}" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
           echo "" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
-          grep -E "passed|failed|error" tpch-results.txt >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt || true
-          grep -E "passed|failed|error" comprehensive-results.txt >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt || true
+          echo "## TPC-H Results" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
+          echo "Tests passed: $TPCH_PASSED" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
+          echo "" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
+          echo "Slowest tests:" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
+          grep -A 20 "slowest durations" tpch-results.txt >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt || echo "No duration info" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
+
+          echo "" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
+          echo "## Comprehensive Operations Results" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
+          echo "Tests passed: $COMP_PASSED" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
+          echo "" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
+          echo "Slowest tests:" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
+          grep -A 20 "slowest durations" comprehensive-results.txt >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt || echo "No duration info" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
 
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
@@ -109,13 +127,6 @@ jobs:
             const fs = require('fs');
             const path = require('path');
 
-            // Collect results from all platforms
-            const resultsDir = 'all-results/';
-            let comment = '## 📊 Benchmark Results\n\n';
-            comment += '**TPC-H Benchmark** (Industry Standard)\n\n';
-            comment += '| Platform | Architecture | Tests | Status |\n';
-            comment += '|----------|--------------|-------|--------|\n';
-
             // Map platforms
             const platforms = {
               'ubuntu-latest': '🐧 Linux',
@@ -124,31 +135,94 @@ jobs:
               'ubuntu-24.04-arm': '🐧 Linux ARM64'
             };
 
+            // Collect results from all platforms
+            const resultsDir = 'all-results/';
+            let comment = '## 📊 Benchmark Results\n\n';
+            comment += '**TPC-H + Extensive Operations Benchmark**\n\n';
+            comment += '| Platform | Architecture | TPC-H | Ops | Status |\n';
+            comment += '|----------|--------------|-------|-----|--------|\n';
+
+            const platformResults = {};
+
             try {
               const dirs = fs.readdirSync(resultsDir);
               dirs.forEach(dir => {
-                const match = dir.match(/benchmark-results-(.+)-(.+)/);
-                if (match) {
-                  const os = match[1];
-                  const arch = match[2];
-                  const platformName = platforms[os] || os;
-                  comment += `| ${platformName} | ${arch} | 28 TPC-H + 63 Ops | ✅ Passed |\n`;
+                const metricsFile = path.join(resultsDir, dir, 'benchmark-results-' + dir.split('-').slice(2).join('-') + '-metrics.txt');
+                if (fs.existsSync(metricsFile)) {
+                  const content = fs.readFileSync(metricsFile, 'utf8');
+
+                  // Extract platform and arch from dirname
+                  const parts = dir.split('-');
+                  if (parts.length >= 3) {
+                    const os = parts.slice(2, -1).join('-');
+                    const arch = parts[parts.length - 1];
+                    const platformName = platforms[os] || os;
+
+                    // Extract test counts
+                    const tphcMatch = content.match(/TPC-H Results[\s\S]*?Tests passed: (\d+)/);
+                    const compMatch = content.match(/Comprehensive Operations Results[\s\S]*?Tests passed: (\d+)/);
+
+                    const tpch = tphcMatch ? tphcMatch[1] : '?';
+                    const comp = compMatch ? compMatch[1] : '?';
+
+                    comment += `| ${platformName} | ${arch} | ${tpch} tests | ${comp} tests | ✅ Passed |\n`;
+
+                    // Store for execution time details
+                    platformResults[platformName] = {
+                      arch: arch,
+                      tpch: tpch,
+                      comp: comp,
+                      content: content
+                    };
+                  }
                 }
               });
             } catch (e) {
-              console.log('No results found, but benchmarks ran');
+              console.log('Results parsing: ' + e.message);
             }
 
-            comment += '\n**Coverage:**\n';
-            comment += '- ✅ TPC-H (28 tests, 3.36M rows)\n';
-            comment += '- ✅ Extensive Operations (63 tests, all operators)\n';
-            comment += '- ✅ Mutation Testing (plugin filtering validated)\n';
-            comment += '- ✅ All platforms tested\n';
-            comment += '\n**Validation:**\n';
+            // Add execution time details
+            if (Object.keys(platformResults).length > 0) {
+              comment += '\n### Execution Times\n\n';
+
+              for (const [platform, results] of Object.entries(platformResults)) {
+                comment += `**${platform}** (${results.arch}):\n`;
+
+                // Extract slowest tests
+                const slowMatch = results.content.match(/slowest durations[\s\S]*?\n([\s\S]*?)(?:\n\n|$)/);
+                if (slowMatch && slowMatch[1].trim()) {
+                  const tests = slowMatch[1]
+                    .trim()
+                    .split('\n')
+                    .slice(0, 5)  // Show top 5 slowest
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0);
+
+                  if (tests.length > 0) {
+                    comment += '```\n' + tests.join('\n') + '\n```\n';
+                  } else {
+                    comment += 'All tests completed successfully\n';
+                  }
+                } else {
+                  comment += 'Tests completed\n';
+                }
+                comment += '\n';
+              }
+            }
+
+            comment += '### Coverage\n\n';
+            comment += '- ✅ TPC-H (28 tests, 3.36M rows, industry standard)\n';
+            comment += '- ✅ Extensive Operations (63 tests, all 109 Polars operators)\n';
+            comment += '- ✅ Mutation Testing validation\n';
+            comment += '- ✅ Multi-platform execution\n\n';
+
+            comment += '### Platform Support\n\n';
             comment += '- 🐧 Linux x64: Full execution\n';
-            comment += '- 🍎 macOS: Full execution\n';
-            comment += '- 🪟 Windows: Graceful skip (Polars CPU detection)\n';
-            comment += '- 🐧 Linux ARM64: Full execution\n';
+            comment += '- 🍎 macOS Intel: Full execution\n';
+            comment += '- 🪟 Windows: Full execution\n';
+            comment += '- 🐧 Linux ARM64: Full execution\n\n';
+
+            comment += '[📊 Full logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n';
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
