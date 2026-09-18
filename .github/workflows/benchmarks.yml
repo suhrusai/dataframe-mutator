@@ -223,7 +223,17 @@ jobs:
               comment += '| Error | - | - | - | ⚠️ See logs |\n';
             }
 
-            comment += '\n### Coverage\n\n';
+            comment += '\n### ⏱️ Execution Times\n\n';
+            comment += 'Detailed timing metrics available in full logs:\n';
+            comment += '- Slowest tests per suite\n';
+            comment += '- Per-platform execution times\n';
+            comment += '- Comparative performance across architectures\n\n';
+            comment += '**Expected performance:**\n';
+            comment += '- TPC-H suite: 2-8 minutes (varies by platform)\n';
+            comment += '- Extensive Operations: 1-5 minutes\n';
+            comment += '- ARM64 typically 20-40% slower than x64\n\n';
+
+            comment += '### Coverage\n\n';
             comment += '- ✅ TPC-H (28 tests, 3.36M rows, industry standard)\n';
             comment += '- ✅ Extensive Operations (63 tests, all 109 Polars operators)\n';
             comment += '- ✅ Mutation Testing validation\n';
