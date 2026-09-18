@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dataframe-mutator"
-version = "0.2.1"
-description = "Production-grade mutation testing for Polars dataframes. Validate test suite quality by detecting which mutations your tests catch."
+version = "2.0.0"
+description = "mutmut extension for Polars DataFrame support. Adds 109 Polars-specific operators and smart filtering to mutation testing."
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
@@ -29,15 +29,16 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 dependencies = [
-    "mutmut>=2.4.0",
-    "click>=8.0.0",
+    "mutmut>=2.4.0",  # Required: base mutation testing engine
+    "click>=8.0.0",   # Required: CLI framework
 ]
 
-[project.scripts]
-dataframe-mutator = "dataframe_mutator.cli:cli"
 
-[project.entry-points.pytest11]
-dataframe-mutator = "dataframe_mutator.pytest_plugin"
+[project.entry-points."mutmut.operators"]
+polars = "dataframe_mutator.mutmut_plugin:get_plugin"
+
+[project.entry-points."mutmut.filters"]
+polars = "dataframe_mutator.mutmut_plugin:get_plugin"
 
 [project.urls]
 Homepage = "https://github.com/suhrusai/dataframe-mutator"

@@ -1,4 +1,4 @@
-"""Polars dataframe mutation testing operators and smart analysis."""
+"""Polars dataframe mutation operators for mutmut plugin integration."""
 
 from .operators import (
     PolarsAggregationMutation,
@@ -116,10 +116,6 @@ from .operators import (
     PolarsWriteParquetMutation,
     get_all_polars_operators,
 )
-from .smart_integration import (
-    PolarsSemanticMutationValidator,
-    SmartPolarsTestRunner,
-)
 
 __all__ = [
     "PolarsAggregationMutation",
@@ -197,7 +193,6 @@ __all__ = [
     "PolarsSampleMutation",
     "PolarsScanReadMutation",
     "PolarsSelectColumnsMutation",
-    "PolarsSemanticMutationValidator",
     "PolarsSemiJoinMutation",
     "PolarsSerializationMutation",
     "PolarsShiftMutation",
@@ -231,6 +226,5 @@ __all__ = [
     "PolarsWithContextMutation",
     "PolarsWriteCsvMutation",
     "PolarsWriteParquetMutation",
-    "SmartPolarsTestRunner",
     "get_all_polars_operators",
 ]

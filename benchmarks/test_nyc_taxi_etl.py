@@ -1,12 +1,24 @@
 """Comprehensive tests for NYC Taxi ETL pipeline.
 
 These tests validate all operations in the production ETL pipeline.
+
+Note: These tests require Polars and run on Linux (GitHub Actions).
+On Windows, mocked tests in tests/test_windows_mocks.py are used instead.
 """
 
-import polars as pl
+import sys
 import pytest
 
-from benchmarks.nyc_taxi_etl import NYCTaxiETL
+# Mark all tests in this module for Linux only
+pytestmark = pytest.mark.linux
+
+# Import Polars - will fail gracefully on Windows
+try:
+    import polars as pl
+    from benchmarks.nyc_taxi_etl import NYCTaxiETL
+except (ImportError, RuntimeError):
+    if sys.platform.startswith("win"):
+        pytest.skip("Skipping: Polars unavailable on Windows", allow_module_level=True)
 
 
 @pytest.fixture

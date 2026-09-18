@@ -1,8 +1,8 @@
 # 🧬 dataframe-mutator
 
-**Production-grade mutation testing for Polars dataframes.** Validate your test suite quality by automatically detecting which mutations (logic bugs) your tests actually catch.
+**Polars support for mutmut.** Extend mutation testing with 109 Polars-specific operators and smart filtering to catch DataFrame bugs your tests miss.
 
-> **Mutation testing** runs your tests against intentionally mutated code. If tests pass despite the mutation, your test is weak. This framework makes it easy to find gaps in data pipeline test coverage.
+> **dataframe-mutator** is a mutmut plugin that adds Polars DataFrame support. Use mutmut as normal—Polars optimization happens automatically. **Mutation testing** runs your tests against intentionally mutated code. If tests pass despite the mutation, your test is weak.
 
 [![Build](https://github.com/suhrusai/dataframe-mutator/actions/workflows/tests.yml/badge.svg)](https://github.com/suhrusai/dataframe-mutator/actions)
 [![Tests](https://img.shields.io/badge/tests-207%20passing-brightgreen)](https://github.com/suhrusai/dataframe-mutator/actions)
@@ -19,27 +19,24 @@
 pip install dataframe-mutator[polars]
 ```
 
-### 2-Minute Example
+### Run Mutation Testing
 
-```python
-import polars as pl
-from dataframe_mutator.polars import SmartPolarsTestRunner
+Once installed, mutmut automatically discovers dataframe-mutator:
 
-# Your pipeline
-def process_sales(df: pl.DataFrame) -> pl.DataFrame:
-    return (
-        df
-        .filter(pl.col("amount") > 100)
-        .group_by("region")
-        .agg(pl.col("amount").sum())
-    )
+```bash
+# Run mutation testing with Polars optimization
+mutmut run
 
-# Test quality
-tester = SmartPolarsTestRunner(test_command="pytest tests/")
-results = tester.analyze_mutation_efficiency("pipeline.py")
+# Result: 109 Polars operators + smart filtering = fast, accurate testing
+```
 
-print(f"High-value mutations: {results['high_value_mutations']}")
-print(f"False positives avoided: {results['potential_false_positives_avoided']:.1f}%")
+### Configuration (Optional)
+
+```toml
+# pyproject.toml
+[tool.dataframe-mutator]
+skip_low_value_mutations = true  # Skip column name changes, etc
+enable_semantic_analysis = true  # Prioritize meaningful mutations
 ```
 
 ## ✨ Key Features
