@@ -24,8 +24,6 @@ Settings → Branches → Branch protection rules
 **Required checks (MUST ALL PASS before merge):**
 
 ```
-Tests (Ubuntu Latest, Python 3.8)
-Tests (Ubuntu Latest, Python 3.9)
 Tests (Ubuntu Latest, Python 3.10)
 Tests (Ubuntu Latest, Python 3.11)
 Tests (Ubuntu Latest, Python 3.12)
@@ -77,10 +75,8 @@ Plugin Integration Test
 
 These jobs MUST ALL pass before PR can be merged:
 
-### Test Jobs (10 combinations)
+### Test Jobs (9 combinations)
 ```
-Tests-Linux-3.8
-Tests-Linux-3.9
 Tests-Linux-3.10
 Tests-Linux-3.11
 Tests-Linux-3.12
@@ -89,6 +85,7 @@ Tests-Linux-3.14
 Tests-macOS-3.14
 Tests-Windows-3.14
 Tests-ARM64-3.14
+test-examples
 ```
 
 Each test job validates:
@@ -122,9 +119,10 @@ Final step that comments results on PR.
 ## What This Ensures
 
 ✅ **No Merges Without Passing Checks**
-- All 10 test combinations must pass (Python 3.8-3.14)
+- All 9 test combinations must pass (Python 3.10-3.14)
 - All 4 benchmark suites must pass
 - All 2 integration test suites must pass (mutmut + plugin)
+- Example tests must pass
 - Results comment must post
 - Cannot merge with failing tests
 
@@ -170,8 +168,6 @@ Final step that comments results on PR.
 ### Step 4: Configure Status Checks
 Click "Require status checks to pass before merging":
 - Search and select each job name:
-  - `Tests (Ubuntu Latest, Python 3.8)`
-  - `Tests (Ubuntu Latest, Python 3.9)`
   - `Tests (Ubuntu Latest, Python 3.10)`
   - `Tests (Ubuntu Latest, Python 3.11)`
   - `Tests (Ubuntu Latest, Python 3.12)`
@@ -180,6 +176,7 @@ Click "Require status checks to pass before merging":
   - `Tests (macOS 15 Intel, Python 3.14)`
   - `Tests (Windows Latest, Python 3.14)`
   - `Tests (Ubuntu 24.04 ARM, Python 3.14)`
+  - `test-examples`
   - `Benchmarks (ubuntu-latest, x64)`
   - `Benchmarks (macos-15-intel, x64)`
   - `Benchmarks (windows-latest, x64)`

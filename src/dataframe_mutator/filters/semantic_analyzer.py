@@ -7,7 +7,7 @@ and determine which mutations are likely to be meaningful.
 import ast
 import logging
 import re
-from typing import Dict, Set
+from typing import Any, Dict, Optional, Set
 
 logger = logging.getLogger(__name__)
 
@@ -32,14 +32,14 @@ class SemanticMutationAnalyzer:
         self.tree = self._parse(code)
         self._analyze()
 
-    def _parse(self, code: str) -> ast.AST:
+    def _parse(self, code: str) -> Optional[ast.AST]:
         """Parse code to AST.
 
         Args:
             code: Python source code
 
         Returns:
-            AST tree
+            AST tree or None if parsing fails
         """
         try:
             return ast.parse(code)
@@ -66,13 +66,13 @@ class SemanticMutationAnalyzer:
         self.filters = self._find_filters()
         self.joins = self._find_joins()
 
-    def _find_columns(self) -> Set[str]:
+    def _find_columns(self) -> Set[Any]:
         """Find all column references.
 
         Returns:
-            Set of column names
+            Set of column names (typically strings)
         """
-        columns = set()
+        columns: Set[Any] = set()
 
         class ColumnVisitor(ast.NodeVisitor):
             def visit_Call(self, node):
@@ -236,7 +236,7 @@ class SemanticMutationAnalyzer:
             aggs.add(match.group(0))
         return aggs
 
-    def summarize(self) -> Dict[str, any]:
+    def summarize(self) -> Dict[str, Any]:
         """Summarize analysis results.
 
         Returns:
