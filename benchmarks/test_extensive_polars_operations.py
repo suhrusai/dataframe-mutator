@@ -309,7 +309,7 @@ class TestStringOperations:
         result = df.with_columns(
             pl.col("region").str.to_uppercase().alias("region_upper")
         )
-        assert all(result["region_upper"].str.lengths() > 0)
+        assert all(result["region_upper"].str.len_chars() > 0)
 
     def test_to_lowercase(self, large_dataset):
         df, _, _ = large_dataset
@@ -326,7 +326,7 @@ class TestStringOperations:
     def test_string_lengths(self, large_dataset):
         df, _, _ = large_dataset
         result = df.with_columns(
-            pl.col("region").str.lengths().alias("region_len")
+            pl.col("region").str.len_chars().alias("region_len")
         )
         assert "region_len" in result.columns
 
@@ -533,7 +533,7 @@ class TestComplexPipelines:
                 pl.col("transaction_id").count().alias("tx_count"),
             ])
             .filter(pl.col("total_sales") > 1000)
-            .sort(["region", pl.col("total_sales").desc()])
+            .sort(["region", "total_sales"], descending=[False, True])
         )
 
         assert len(result) > 0
@@ -575,7 +575,7 @@ class TestComplexPipelines:
             ])
             .join(customers, on="customer_id", how="left")
             .filter(pl.col("lifetime_spending") > 500)
-            .sort(pl.col("lifetime_spending").desc())
+            .sort("lifetime_spending", descending=True)
         )
 
         assert len(result) > 0
@@ -595,8 +595,8 @@ class TestEdgeCases:
         df, _, _ = large_dataset
         single = df.limit(1)
         result = single.select([
-            pl.col("amount").sum(),
-            pl.col("amount").mean(),
+            pl.col("amount").sum().alias("total"),
+            pl.col("amount").mean().alias("avg"),
         ])
         assert len(result) == 1
 
