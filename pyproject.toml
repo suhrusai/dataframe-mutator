@@ -38,7 +38,7 @@ dependencies = [
 polars = "dataframe_mutator.mutmut_plugin:get_plugin"
 
 [project.entry-points."mutmut.filters"]
-polars = "dataframe_mutator.mutmut_plugin:get_plugin"
+polars = "dataframe_mutator.mutmut_plugin:polars_filter"
 
 [project.urls]
 Homepage = "https://github.com/suhrusai/dataframe-mutator"

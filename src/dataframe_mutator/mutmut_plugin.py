@@ -133,6 +133,7 @@ class DataframeMutatorPlugin:
 
 # Plugin instance for mutmut discovery
 _plugin_instance: Optional[DataframeMutatorPlugin] = None
+_filter_instance: Optional[Any] = None
 
 
 def get_plugin() -> DataframeMutatorPlugin:
@@ -145,3 +146,22 @@ def get_plugin() -> DataframeMutatorPlugin:
     if _plugin_instance is None:
         _plugin_instance = DataframeMutatorPlugin()
     return _plugin_instance
+
+
+def polars_filter(original: str, mutated: str) -> bool:
+    """Mutation filter for Polars code - entry point for mutmut.
+
+    Args:
+        original: Original code
+        mutated: Mutated code
+
+    Returns:
+        True if mutation should be tested, False to skip
+    """
+    from .filters import PolarsMutationFilter
+
+    global _filter_instance
+    if _filter_instance is None:
+        _filter_instance = PolarsMutationFilter()
+
+    return _filter_instance.should_mutate(original, mutated)
