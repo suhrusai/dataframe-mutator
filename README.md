@@ -4,9 +4,10 @@
 
 > **Mutation testing** runs your tests against intentionally mutated code. If tests pass despite the mutation, your test is weak. This framework makes it easy to find gaps in data pipeline test coverage.
 
+[![Build](https://github.com/suhrusai/dataframe-mutator/actions/workflows/tests.yml/badge.svg)](https://github.com/suhrusai/dataframe-mutator/actions)
 [![Tests](https://img.shields.io/badge/tests-207%20passing-brightgreen)](https://github.com/suhrusai/dataframe-mutator/actions)
-[![Operators](https://img.shields.io/badge/operators-109-blue)](https://github.com/suhrusai/dataframe-mutator#features)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-success)](https://github.com/suhrusai/dataframe-mutator)
+[![Operators](https://img.shields.io/badge/operators-109-blue)](https://github.com/suhrusai/dataframe-mutator#features)
 [![Python](https://img.shields.io/badge/python-3.8+-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/suhrusai/dataframe-mutator/blob/main/LICENSE)
 
