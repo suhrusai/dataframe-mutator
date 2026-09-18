@@ -57,9 +57,38 @@ jobs:
           DURATION_S=$(echo "scale=3; $DURATION_MS / 1000" | bc)
 
           # Extract mutations from mutmut output (format: "⠙ 134/134  🎉 98 🫥 0")
-          MUTATIONS=$(grep -oP '[0-9]+/\K[0-9]+' /tmp/vanilla_${{ matrix.run }}.log | head -1 || echo "0")
-          KILLED=$(grep -oP '🎉\s*\K[0-9]+' /tmp/vanilla_${{ matrix.run }}.log | head -1 || echo "0")
-          SURVIVED=$(grep -oP '🫥\s*\K[0-9]+' /tmp/vanilla_${{ matrix.run }}.log | head -1 || echo "0")
+          # Use Python for more reliable extraction
+          python3 << 'PYEOF'
+          import re
+          with open('/tmp/vanilla_${{ matrix.run }}.log') as f:
+              content = f.read()
+          # Match pattern like "134/134  🎉 98 🫥 0"
+          match = re.search(r'(\d+)/(\d+)\s+🎉\s+(\d+)\s+🫥\s+(\d+)', content)
+          if match:
+              print(f"MUTATIONS={match.group(2)}")
+              print(f"KILLED={match.group(3)}")
+              print(f"SURVIVED={match.group(4)}")
+          else:
+              print("MUTATIONS=0")
+              print("KILLED=0")
+              print("SURVIVED=0")
+          PYEOF
+
+          source <(python3 << 'PYEOF'
+          import re
+          with open('/tmp/vanilla_${{ matrix.run }}.log') as f:
+              content = f.read()
+          match = re.search(r'(\d+)/(\d+)\s+🎉\s+(\d+)\s+🫥\s+(\d+)', content)
+          if match:
+              print(f"export MUTATIONS={match.group(2)}")
+              print(f"export KILLED={match.group(3)}")
+              print(f"export SURVIVED={match.group(4)}")
+          else:
+              print("export MUTATIONS=0")
+              print("export KILLED=0")
+              print("export SURVIVED=0")
+          PYEOF
+          )
 
           echo "=============================================="
           echo "Run ${{ matrix.run }}/10 Results (Vanilla)"
@@ -129,9 +158,21 @@ jobs:
           DURATION_S=$(echo "scale=3; $DURATION_MS / 1000" | bc)
 
           # Extract mutations from mutmut output (format: "⠙ 134/134  🎉 98 🫥 0")
-          MUTATIONS=$(grep -oP '[0-9]+/\K[0-9]+' /tmp/plugin_${{ matrix.run }}.log | head -1 || echo "0")
-          KILLED=$(grep -oP '🎉\s*\K[0-9]+' /tmp/plugin_${{ matrix.run }}.log | head -1 || echo "0")
-          SURVIVED=$(grep -oP '🫥\s*\K[0-9]+' /tmp/plugin_${{ matrix.run }}.log | head -1 || echo "0")
+          source <(python3 << 'PYEOF'
+          import re
+          with open('/tmp/plugin_${{ matrix.run }}.log') as f:
+              content = f.read()
+          match = re.search(r'(\d+)/(\d+)\s+🎉\s+(\d+)\s+🫥\s+(\d+)', content)
+          if match:
+              print(f"export MUTATIONS={match.group(2)}")
+              print(f"export KILLED={match.group(3)}")
+              print(f"export SURVIVED={match.group(4)}")
+          else:
+              print("export MUTATIONS=0")
+              print("export KILLED=0")
+              print("export SURVIVED=0")
+          PYEOF
+          )
 
           echo "=============================================="
           echo "Run ${{ matrix.run }}/10 Results (Plugin)"
