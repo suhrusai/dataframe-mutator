@@ -4,29 +4,30 @@ Comprehensive benchmarks comparing `dataframe-mutator` vs `mutmut` using **real 
 
 ## Quick Start
 
-### 1. Download NYC Taxi Data
+The benchmark automatically downloads the NYC Taxi dataset on first run.
 
-The benchmark uses real, public NYC Taxi trip data from the NYC TLC:
+### Run Benchmarks
 
 ```bash
-# Download January 2024 data (500MB, ~2.9M trips)
-wget https://d37ci6vzch7kqd.cloudfront.net/trip-data/yellow_tripdata_2024-01.parquet
+# Run benchmarks (auto-downloads ~1GB dataset)
+python benchmarks/benchmark_suite.py
 
-# Or download a smaller month (or you can use sample data)
-wget https://d37ci6vzch7kqd.cloudfront.net/trip-data/yellow_tripdata_2023-12.parquet
+# Or run tests only (no download needed)
+pytest benchmarks/test_nyc_taxi_etl.py -v
+```
+
+### Manual Dataset Download
+
+If you prefer to download manually:
+
+```bash
+# Download January 2024 data (500MB-1GB, ~2.9M trips)
+mkdir -p benchmarks/data
+wget -O benchmarks/data/yellow_tripdata_2024-01.parquet \
+  https://d37ci6vzch7kqd.cloudfront.net/trip-data/yellow_tripdata_2024-01.parquet
 ```
 
 Full archive: https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page
-
-### 2. Run Benchmarks
-
-```bash
-# Run with downloaded data
-python benchmarks/benchmark_suite.py --data-path yellow_tripdata_2024-01.parquet
-
-# Or run tests
-pytest benchmarks/test_nyc_taxi_etl.py -v
-```
 
 ## Benchmark Files
 
@@ -92,27 +93,34 @@ TIME SAVED                   ~235s per run
 
 ## Running Benchmarks
 
-### Local Benchmarking
+### Requirements
 
 ```bash
 # Install dependencies
 pip install -e ".[dev,polars]"
 pip install mutmut
-
-# Download data
-wget https://d37ci6vzch7kqd.cloudfront.net/trip-data/yellow_tripdata_2024-01.parquet
-
-# Run benchmark
-python benchmarks/benchmark_suite.py --data-path yellow_tripdata_2024-01.parquet
 ```
 
-### Testing Pipeline
+### Run Full Benchmark
 
 ```bash
-# Run tests (no data download needed)
+# Auto-downloads NYC Taxi dataset (~1GB) and runs comparison
+python benchmarks/benchmark_suite.py
+
+# Expected output:
+# - Downloads dataset (if not present)
+# - Runs dataframe-mutator on NYC Taxi ETL
+# - Runs mutmut on NYC Taxi ETL
+# - Saves results to benchmarks/results.json
+```
+
+### Testing Pipeline Only
+
+```bash
+# Run tests (no dataset download needed, uses test fixtures)
 pytest benchmarks/test_nyc_taxi_etl.py -v
 
-# Test count
+# Quick test count
 pytest benchmarks/test_nyc_taxi_etl.py --tb=no -q
 ```
 
@@ -189,31 +197,53 @@ Running mutation tests weekly on this pipeline:
 
 ## Advanced Usage
 
-### Custom Pipeline
+### Use Custom Dataset
 
-To benchmark your own ETL:
+Place your parquet file in `benchmarks/data/` directory:
+
+```bash
+# Copy your dataset
+cp your_dataset.parquet benchmarks/data/yellow_tripdata_2024-01.parquet
+
+# Run benchmark (will use existing file)
+python benchmarks/benchmark_suite.py
+```
+
+### Benchmark Larger Dataset
+
+Download full year for comprehensive benchmarks:
+
+```bash
+# Download all 12 months (cumulative ~12GB)
+for month in {01..12}; do
+  wget -O benchmarks/data/yellow_tripdata_2024-$month.parquet \
+    https://d37ci6vzch7kqd.cloudfront.net/trip-data/yellow_tripdata_2024-$month.parquet
+done
+
+# Then run benchmark - it will use the first available dataset
+python benchmarks/benchmark_suite.py
+```
+
+### Programmatic Usage
 
 ```python
 from benchmarks.benchmark_suite import BenchmarkRunner
 
-runner = BenchmarkRunner(
-    etl_module="my_package.my_etl",
-    pipeline_class="MyETLClass",
-    test_dir="my_tests/"
-)
+# Create runner
+runner = BenchmarkRunner()
+
+# Download dataset if needed
+runner.download_dataset()
+
+# Run full benchmark
 results = runner.run_all()
+
+# Save results
 runner.save_results("custom_results.json")
-```
 
-### Larger Dataset
-
-Download larger dataset for more realistic benchmarks:
-
-```bash
-# Full year (12GB)
-for month in {01..12}; do
-  wget https://d37ci6vzch7kqd.cloudfront.net/trip-data/yellow_tripdata_2024-$month.parquet
-done
+# Access results
+for result in runner.results:
+    print(f"{result.tool}: {result.execution_time:.2f}s")
 ```
 
 ## CI/CD Integration
