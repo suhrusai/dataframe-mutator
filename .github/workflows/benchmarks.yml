@@ -11,6 +11,7 @@ on:
 
 jobs:
   benchmark:
+    name: "Benchmarks (${{ matrix.os }}, ${{ matrix.arch }})"
     # TPC-H benchmark on multiple platforms and architectures
     strategy:
       matrix:
