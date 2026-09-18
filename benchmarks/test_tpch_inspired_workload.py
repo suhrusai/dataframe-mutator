@@ -42,10 +42,10 @@ def tpch_dataset() -> "Tuple[pl.DataFrame, pl.DataFrame, pl.DataFrame, pl.DataFr
     orders = pl.DataFrame({
         "o_orderkey": list(range(1, n_orders + 1)),
         "o_custkey": [i % 10000 + 1 for i in range(n_orders)],
-        "o_orderstatus": ["O", "F", "P"] * (n_orders // 3),
+        "o_orderstatus": [["O", "F", "P"][i % 3] for i in range(n_orders)],
         "o_totalprice": [(i * 7.3 + 100) % 500000 for i in range(n_orders)],
         "o_orderdate": order_dates,
-        "o_orderpriority": ["1-URGENT", "2-HIGH", "3-MEDIUM", "4-LOW", "5-LOW"] * (n_orders // 5),
+        "o_orderpriority": [["1-URGENT", "2-HIGH", "3-MEDIUM", "4-LOW", "5-LOW"][i % 5] for i in range(n_orders)],
     })
 
     # LINEITEM table (400k line items)
@@ -58,8 +58,8 @@ def tpch_dataset() -> "Tuple[pl.DataFrame, pl.DataFrame, pl.DataFrame, pl.DataFr
         "l_extendedprice": [(i * 11.7 + 10) % 100000 for i in range(n_lineitems)],
         "l_discount": [((i % 11) / 100) for i in range(n_lineitems)],
         "l_tax": [((i % 9) / 100) for i in range(n_lineitems)],
-        "l_returnflag": ["A", "R", "N"] * (n_lineitems // 3),
-        "l_linestatus": ["O", "F"] * (n_lineitems // 2),
+        "l_returnflag": [["A", "R", "N"][i % 3] for i in range(n_lineitems)],
+        "l_linestatus": [["O", "F"][i % 2] for i in range(n_lineitems)],
     })
 
     # PART table (10k parts)
