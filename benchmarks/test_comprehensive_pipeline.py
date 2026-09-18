@@ -5,19 +5,23 @@ These tests are designed to:
 2. Kill mutations in diverse operation types
 3. Provide heavy workload for benchmarking mutmut performance
 
-Note: These tests require Polars and will be skipped on systems
-where Polars CPU detection fails (e.g., Windows development).
-They run successfully on Linux (GitHub Actions).
+Note: These tests require Polars and run on Linux (GitHub Actions).
+On Windows, mocked tests in tests/test_windows_mocks.py are used instead.
 """
 
+import sys
 import pytest
 
-# Skip all tests if Polars unavailable
+# Mark all tests in this module for Linux only
+pytestmark = pytest.mark.linux
+
+# Import Polars - will fail gracefully on Windows
 try:
     import polars as pl
     from comprehensive_polars_pipeline import ComprehensivePolarsWorkload
-except (ImportError, RuntimeError) as e:
-    pytest.skip(f"Skipping: Polars unavailable ({e})", allow_module_level=True)
+except (ImportError, RuntimeError):
+    if sys.platform.startswith("win"):
+        pytest.skip("Skipping: Polars unavailable on Windows", allow_module_level=True)
 
 
 @pytest.fixture

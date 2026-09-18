@@ -12,14 +12,17 @@ These tests are designed to:
 3. Demonstrate plugin works alongside traditional mutmut
 4. Validate correctness of mixed workload processing
 
-Note: These tests require Polars and will be skipped on systems
-where Polars CPU detection fails (e.g., Windows development).
-They run successfully on Linux (GitHub Actions).
+Note: These tests require Polars and run on Linux (GitHub Actions).
+On Windows, pure Python tests in tests/test_windows_mocks.py are used instead.
 """
 
+import sys
 import pytest
 
-# Skip all tests if Polars unavailable
+# Mark all tests in this module for Linux only
+pytestmark = pytest.mark.linux
+
+# Import Polars - will fail gracefully on Windows
 try:
     import polars as pl
     from mixed_workload_pipeline import (
@@ -31,8 +34,9 @@ try:
         Order,
         OrderStatus,
     )
-except (ImportError, RuntimeError) as e:
-    pytest.skip(f"Skipping: Polars unavailable ({e})", allow_module_level=True)
+except (ImportError, RuntimeError):
+    if sys.platform.startswith("win"):
+        pytest.skip("Skipping: Polars unavailable on Windows", allow_module_level=True)
 
 
 # ============================================================================
