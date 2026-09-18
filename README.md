@@ -1,113 +1,113 @@
-# 🧬 dataframe-mutator
+# 🧬 dataframe-mutator v2.0.0
 
-**Polars support for mutmut.** Extend mutation testing with 109 Polars-specific operators and smart filtering to catch DataFrame bugs your tests miss.
+**Smart mutation testing for Polars.** Extend mutmut with 109 Polars-specific operators and intelligent filtering to catch DataFrame bugs your tests miss.
 
-> **dataframe-mutator** is a mutmut plugin that adds Polars DataFrame support. Use mutmut as normal—Polars optimization happens automatically. **Mutation testing** runs your tests against intentionally mutated code. If tests pass despite the mutation, your test is weak.
+> **dataframe-mutator** is a mutmut extension plugin. Install it once, then use mutmut normally — Polars optimization happens automatically via entry points. Mutation testing verifies that your tests actually catch bugs when code changes.
 
 [![Build](https://github.com/suhrusai/dataframe-mutator/actions/workflows/tests.yml/badge.svg)](https://github.com/suhrusai/dataframe-mutator/actions)
-[![Tests](https://img.shields.io/badge/tests-207%20passing-brightgreen)](https://github.com/suhrusai/dataframe-mutator/actions)
-[![Coverage](https://img.shields.io/badge/coverage-100%25-success)](https://github.com/suhrusai/dataframe-mutator)
+[![Tests](https://img.shields.io/badge/tests-450%2B%20passing-brightgreen)](https://github.com/suhrusai/dataframe-mutator/actions)
 [![Operators](https://img.shields.io/badge/operators-109-blue)](https://github.com/suhrusai/dataframe-mutator#features)
 [![Python](https://img.shields.io/badge/python-3.8+-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/suhrusai/dataframe-mutator/blob/main/LICENSE)
 
 ## ⚡ Quick Start
 
-### Installation
+### 1. Install
 
 ```bash
-pip install dataframe-mutator[polars]
+# Install plugin + mutmut + Polars
+pip install git+https://github.com/suhrusai/dataframe-mutator.git@v2.0.0
+pip install mutmut polars
 ```
 
-### Run Mutation Testing
+### 2. Use mutmut Normally
 
-Once installed, mutmut automatically discovers dataframe-mutator:
+The plugin is auto-discovered — no configuration needed:
 
 ```bash
-# Run mutation testing with Polars optimization
-mutmut run
+# Just run mutmut as usual
+mutmut run --paths src/ --tests-dir tests/
 
-# Result: 109 Polars operators + smart filtering = fast, accurate testing
+# Plugin automatically:
+# ✅ Registers 109 Polars operators
+# ✅ Skips low-value mutations (column names, syntax-only changes)
+# ✅ Uses semantic analysis for priority scoring
+# ✅ Results in 2-5x speedup on Polars code
 ```
 
-### Configuration (Optional)
+### 3. View Results
 
-```toml
-# pyproject.toml
-[tool.dataframe-mutator]
-skip_low_value_mutations = true  # Skip column name changes, etc
-enable_semantic_analysis = true  # Prioritize meaningful mutations
+```bash
+mutmut results
+
+# Output:
+# Generated: 120 mutations
+# Filtered by plugin: 36 low-value mutations (30%)
+# Tested: 84 mutations
+# Killed: 73 (87%)
+# Survived: 11 (13%)
+# Mutation score: 87%
 ```
 
 ## ✨ Key Features
 
-- **109 Production Operators** — Complete Polars API coverage (filtering, aggregations, joins, nulls, strings, datetime, window functions, and more)
-- **Smart Analysis** — AST-aware filtering eliminates false positives (6-10x faster than vanilla mutmut)
-- **Real-World Bug Detection** — Catches boundary errors, wrong aggregations, data loss, null handling mistakes, and boolean logic bugs
-- **Easy Integration** — Works with your existing pytest test suite
+- **109 Polars Operators** — All categories: filters, aggregations, joins, groupby, window functions, nulls, strings, sorting, distinct, casting, conditionals, math, comparisons, logical
+- **Smart Filtering** — Skips column name mutations, string literals, syntax-only changes
+- **Semantic Analysis** — AST-based priority scoring (0-100) to focus on meaningful mutations
+- **2-5x Faster** — Intelligent filtering reduces mutations tested by 30-60%
+- **Zero Configuration** — Works out of the box with existing pytest tests
+- **Full mutmut Integration** — Extends mutmut's public API via entry points
 
 ## What It Catches
 
-✅ **Boundary mutations** — `> 0` → `>= 0`, `>= 100` → `> 100`  
-✅ **Aggregation swaps** — `sum()` → `mean()`, `count()` → `sum()`  
-✅ **Data loss bugs** — `inner_join()` → `left_join()`  
-✅ **Calculation errors** — `amount * 1.1` → `amount * 1.0`  
-✅ **Boolean logic** — `&` → `|`  
+✅ **Boundary bugs** — `> 100` → `>= 100` (off-by-one errors)  
+✅ **Aggregation swaps** — `sum()` → `mean()`, `min()` → `max()`  
+✅ **Data loss** — `inner_join()` → `left_join()`  
+✅ **Calculation errors** — `amount * 1.1` → `amount / 1.1`  
+✅ **Boolean logic** — `&` → `|`, `>` → `<`  
+✅ **Null handling** — `fill_null(0)` → `fill_null(-1)`  
 
-## How It Works
-
-```python
-# 1. Quick analysis
-tester.analyze_mutation_efficiency("src/pipeline.py")
-# Returns: mutations found, false positives avoided, categories
-
-# 2. Full mutation testing
-results = tester.mutate_and_test("src/pipeline.py")
-mutation_score = results['survival_rate']  # % of mutations caught
-
-# 3. Interpret results
-# 90-100% = Excellent
-# 70-89%  = Good
-# 50-69%  = Fair (add more tests)
-# <50%    = Weak (significant gaps)
-```
-
-## Examples & Documentation
-
-- **[Sales ETL Pipeline Example](https://github.com/suhrusai/dataframe-mutator/tree/main/examples/etl-pipeline)** — Realistic ETL with tests and mutation testing demo
-- **[Full Documentation](https://github.com/suhrusai/dataframe-mutator)** — Complete API reference, operator list, integration guides
-
-## Why Mutation Testing?
-
-**Traditional testing:** Verifies expected behavior  
-**Mutation testing:** Verifies tests catch bugs when code changes
+## Example: Catch Real Bugs
 
 ```python
-# Original code
-if age > 18:
-    adult = True
+# Your code
+def process_sales(df: pl.DataFrame) -> pl.DataFrame:
+    return (
+        df
+        .filter(pl.col("amount") > 100)      # Boundary check
+        .group_by("region")
+        .agg(pl.col("amount").sum())         # Aggregation
+    )
 
-# Mutated code
-if age >= 18:  # Bug: includes exactly 18-year-olds
-    adult = True
+# Mutations tested:
+✅ df.filter(pl.col("amount") >= 100)       # Caught: wrong boundary
+✅ df.group_by("region").agg(mean())        # Caught: wrong aggregation
+❌ df.filter(pl.col("amount") > "100")      # Skipped: type error obvious
+❌ col("amount")                             # Skipped: column name mutation
 
-# Traditional test: ✅ PASSES (doesn't test age==18)
-# Mutation test: ❌ FAILS (catches the boundary change)
+# Test confidence: 87% of mutations killed
 ```
 
-## Integration with CI/CD
+## How to Use (Full Guide)
 
-Works with GitHub Actions, GitLab CI, and other CI systems:
+See **[docs/USAGE_EXAMPLE.md](docs/USAGE_EXAMPLE.md)** for complete examples with:
+- Project structure setup
+- Real ETL pipeline code
+- Comprehensive test suite
+- Running mutation testing
+- Interpreting results
 
-```python
-from dataframe_mutator.polars import SmartPolarsTestRunner
+## Integration & Configuration
 
-tester = SmartPolarsTestRunner(test_command="pytest tests/")
-results = tester.analyze_mutation_efficiency("src/pipeline.py")
+**No configuration needed!** But you can customize in `pyproject.toml`:
 
-if results['high_value_mutations'] < 10:
-    raise Exception("Insufficient test coverage")
+```toml
+[tool.dataframe-mutator]
+skip_low_value_mutations = true    # Skip column names, strings
+enable_semantic_analysis = true    # Use AST-based prioritization
 ```
+
+See **[docs/MUTMUT_INTEGRATION.md](docs/MUTMUT_INTEGRATION.md)** for full configuration options.
 
 ## Support
 
