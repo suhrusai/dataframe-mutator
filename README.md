@@ -4,11 +4,11 @@
 
 > **Mutation testing** runs your tests against intentionally mutated code. If tests pass despite the mutation, your test is weak. This framework makes it easy to find gaps in data pipeline test coverage.
 
-[![Tests](https://img.shields.io/badge/tests-207%20passing-brightgreen)]()
-[![Operators](https://img.shields.io/badge/operators-109-blue)]()
-[![Coverage](https://img.shields.io/badge/coverage-100%25-success)]()
-[![Python](https://img.shields.io/badge/python-3.8+-blue)]()
-[![License](https://img.shields.io/badge/license-MIT-green)]()
+[![Tests](https://img.shields.io/badge/tests-207%20passing-brightgreen)](https://github.com/suhrusai/dataframe-mutator/actions)
+[![Operators](https://img.shields.io/badge/operators-109-blue)](https://github.com/suhrusai/dataframe-mutator#-109-production-operators-100-of-core-polars-api)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-success)](https://github.com/suhrusai/dataframe-mutator)
+[![Python](https://img.shields.io/badge/python-3.8+-blue)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/suhrusai/dataframe-mutator/blob/main/LICENSE)
 
 ---
 
@@ -75,7 +75,7 @@ False positives avoided: 98.5%
 - **Advanced (15/15)** - when/then, is_in, is_not_in, fold, reduce, apply, cache, lazy, collect, fetch, scan, item, row, rows, distinct with maintain_order
 - **Type Ops (3/3)** - dtype checking and type casting
 
-**[See detailed coverage status →](docs/POLARS_FUNCTION_COVERAGE.md)**
+**[See detailed coverage status →](https://github.com/suhrusai/dataframe-mutator/blob/main/docs/POLARS_FUNCTION_COVERAGE.md)**
 
 ### 🧠 Smart Analysis (No False Positives)
 - **AST-aware filtering** - Knows Polars semantics
@@ -355,7 +355,7 @@ for cat, count in results['mutation_categories'].items():
 ### Slicing (3)
 `PolarsSliceMutation`, `PolarsLimitMutation`, `PolarsGatherMutation`
 
-**→ [See all 43+ operators](docs/POLARS_OPERATORS.md)**
+**→ [See all 43+ operators](https://github.com/suhrusai/dataframe-mutator/blob/main/docs/POLARS_OPERATORS.md)**
 
 ---
 
@@ -488,10 +488,10 @@ for category, count in results['mutation_categories'].items():
 
 ## 📖 Documentation
 
-- **[POLARS_FUNCTION_COVERAGE.md](docs/POLARS_FUNCTION_COVERAGE.md)** - Coverage status, roadmap, and which functions are supported
-- **[SMART_POLARS_APPROACH.md](docs/SMART_POLARS_APPROACH.md)** - Why smart filtering matters (6-10x faster)
-- **[POLARS_OPERATORS.md](docs/POLARS_OPERATORS.md)** - Complete operator reference (57 operators)
-- **[INTEGRATION_GUIDE.md](docs/INTEGRATION_GUIDE.md)** - Setup, CI/CD, best practices
+- **[POLARS_FUNCTION_COVERAGE.md](https://github.com/suhrusai/dataframe-mutator/blob/main/docs/POLARS_FUNCTION_COVERAGE.md)** - Coverage status, roadmap, and which functions are supported
+- **[SMART_POLARS_APPROACH.md](https://github.com/suhrusai/dataframe-mutator/blob/main/docs/SMART_POLARS_APPROACH.md)** - Why smart filtering matters (6-10x faster)
+- **[POLARS_OPERATORS.md](https://github.com/suhrusai/dataframe-mutator/blob/main/docs/POLARS_OPERATORS.md)** - Complete operator reference (57 operators)
+- **[INTEGRATION_GUIDE.md](https://github.com/suhrusai/dataframe-mutator/blob/main/docs/INTEGRATION_GUIDE.md)** - Setup, CI/CD, best practices
 
 ---
 
@@ -560,9 +560,9 @@ MIT - See LICENSE file
 
 ## 🙋 Support & Questions
 
-- 📖 Read the [docs](docs/)
-- 💬 Check [examples](examples/)
-- 🐛 Report issues on GitHub
+- 📖 Read the [docs](https://github.com/suhrusai/dataframe-mutator/tree/main/docs)
+- 💬 Check [examples](https://github.com/suhrusai/dataframe-mutator/tree/main/examples)
+- 🐛 Report [issues on GitHub](https://github.com/suhrusai/dataframe-mutator/issues)
 
 ---
 
