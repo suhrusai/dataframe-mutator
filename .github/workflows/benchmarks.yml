@@ -72,6 +72,7 @@ jobs:
 
       - name: Extract and save benchmark metrics
         if: always()
+        shell: bash
         run: |
           mkdir -p benchmark-reports
           python << 'EXTRACT_METRICS'
