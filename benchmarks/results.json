@@ -1,0 +1,27 @@
+{
+  "timestamp": "2026-09-17T19:48:23.104259",
+  "results": [
+    {
+      "tool": "dataframe-mutator",
+      "pipeline_file": "src\\dataframe_mutator\\config.py",
+      "test_command": "python -m pytest tests/test_advanced_features.py::TestMutationConfig -q",
+      "execution_time": 0.014523983001708984,
+      "mutations_tested": 10,
+      "mutations_killed": 10,
+      "score": 100.0,
+      "timestamp": "2026-09-17T19:48:22.409980",
+      "dataset_size_mb": 0.0
+    },
+    {
+      "tool": "mutmut",
+      "pipeline_file": "src\\dataframe_mutator\\config.py",
+      "test_command": "python -m pytest tests/test_advanced_features.py::TestMutationConfig -q",
+      "execution_time": 0.6763031482696533,
+      "mutations_tested": 0,
+      "mutations_killed": 0,
+      "score": 0.0,
+      "timestamp": "2026-09-17T19:48:23.102252",
+      "dataset_size_mb": 0.0
+    }
+  ]
+}
