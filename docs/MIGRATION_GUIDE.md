@@ -1,6 +1,8 @@
-# Migration Guide: From Standalone to mutmut Extension
+# Migration Guide: From Standalone (v0.x) to mutmut Extension (v2.0)
 
-This guide helps users migrate from the old standalone dataframe-mutator to the new mutmut-based architecture.
+This guide helps users migrate from the old standalone dataframe-mutator (v0.2.x) to the new mutmut extension architecture (v2.0+).
+
+⚠️ **Breaking Change**: Version 2.0+ removes all backward compatibility with the old API. This is a clean slate focused on mutmut integration.
 
 ## What Changed?
 
@@ -132,28 +134,31 @@ mutmut run --paths src/ --tests-dir tests/
 | **Configuration** | CLI/code | pyproject.toml |
 | **Integration** | Standalone | mutmut plugin |
 
-## Deprecation Timeline
+## Version History
 
-### v1.0 (Current Release)
-- ✅ New mutmut extension available
-- ⚠️ Old `SmartPolarsTestRunner` still works
-- ⚠️ Old CLI still works (deprecated)
+### v0.2.x (Old Standalone)
+- Standalone mutation testing tool
+- Custom CLI and API
+- No mutmut integration
 
-### v1.1 (Next Release)
-- 🔴 `SmartPolarsTestRunner` deprecated (warnings)
-- 🔴 Old CLI deprecated (warnings)
-- ✅ Use mutmut + plugin instead
+### v2.0+ (Current - mutmut Extension)
+- ✅ **Pure mutmut plugin architecture**
+- ✅ **Auto-discovery via entry points**
+- ✅ **No backward compatibility**
+- 🔴 Old API completely removed
+- 🔴 Old CLI completely removed
+- 🔴 Old classes completely removed
 
-### v2.0 (Future)
-- 🔴 `SmartPolarsTestRunner` removed
-- 🔴 Old CLI removed
-- ✅ mutmut extension only
+If you need the old API, use version 0.2.x:
+```bash
+pip install "dataframe-mutator<1.0"
+```
 
 ## FAQ
 
 ### Q: Will my old code still work?
 
-**A:** Yes, for now. But we recommend migrating to mutmut. Old code will be removed in v2.0.
+**A:** No. v2.0+ is a breaking change - the old API is completely removed. If you need the old API, pin to v0.2.x.
 
 ### Q: How do I configure the plugin?
 
@@ -218,23 +223,28 @@ python -c "from dataframe_mutator.mutmut_plugin import get_plugin; print(get_plu
 mutmut run -v
 ```
 
-### Old API imports fail
+### Old API imports (v2.0+)
+
+Old imports are **no longer available**:
 
 ```python
-# Old way (will fail in v2.0)
+# ❌ REMOVED: These will fail in v2.0+
 from dataframe_mutator.polars import SmartPolarsTestRunner
+from dataframe_mutator.core import DataframeMutationTester
 
-# Use new filter classes instead
-from dataframe_mutator.filters import SemanticMutationAnalyzer
+# ✅ USE: New filter classes instead
+from dataframe_mutator.filters import SemanticMutationAnalyzer, PolarsMutationFilter
 ```
 
-### Need old behavior
+### Need old v0.2.x behavior?
 
-Keep using dataframe-mutator v0.2.x:
+Use version 0.2.x (final standalone release):
 
 ```bash
 pip install "dataframe-mutator<1.0"
 ```
+
+This version has the old API but no mutmut integration.
 
 ## Summary
 
