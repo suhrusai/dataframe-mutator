@@ -49,7 +49,7 @@ jobs:
 
           START=$(date +%s%N)
           python -m pytest tests/ -q > /dev/null 2>&1
-          mutmut run --no-progress > /tmp/vanilla_${{ matrix.run }}.log 2>&1 || true
+          mutmut run > /tmp/vanilla_${{ matrix.run }}.log 2>&1 || true
           END=$(date +%s%N)
 
           echo "Mutmut output:"
@@ -120,7 +120,7 @@ jobs:
 
           START=$(date +%s%N)
           python -m pytest tests/ -q > /dev/null 2>&1
-          mutmut run --no-progress > /tmp/plugin_${{ matrix.run }}.log 2>&1 || true
+          mutmut run > /tmp/plugin_${{ matrix.run }}.log 2>&1 || true
           END=$(date +%s%N)
 
           echo "Mutmut output:"
