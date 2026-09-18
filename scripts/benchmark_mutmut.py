@@ -29,21 +29,21 @@ logging.basicConfig(
 class MutmutBenchmark:
     """Benchmark mutmut with and without dataframe-mutator plugin."""
 
-    def __init__(self, target_file: str, tests_dir: str):
+    def __init__(self, target_file: str = None, tests_dir: str = None):
         """Initialize benchmark.
 
         Args:
-            target_file: Python file to mutate
-            tests_dir: Directory containing tests
+            target_file: Python file to mutate (default: benchmarks/comprehensive_polars_pipeline.py)
+            tests_dir: Directory containing tests (default: benchmarks/)
         """
-        self.target_file = Path(target_file)
-        self.tests_dir = Path(tests_dir)
+        self.target_file = Path(target_file or "benchmarks/comprehensive_polars_pipeline.py")
+        self.tests_dir = Path(tests_dir or "benchmarks/")
         self.results = {}
 
         if not self.target_file.exists():
-            raise FileNotFoundError(f"Target file not found: {target_file}")
+            raise FileNotFoundError(f"Target file not found: {self.target_file}")
         if not self.tests_dir.exists():
-            raise FileNotFoundError(f"Tests directory not found: {tests_dir}")
+            raise FileNotFoundError(f"Tests directory not found: {self.tests_dir}")
 
     def benchmark_mutmut_only(self) -> dict:
         """Benchmark mutmut without dataframe-mutator plugin.
@@ -253,23 +253,30 @@ class MutmutBenchmark:
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Benchmark mutmut vs dataframe-mutator+mutmut"
+        description="Benchmark mutmut vs dataframe-mutator+mutmut plugin"
     )
     parser.add_argument(
         "--target-file",
-        default="benchmarks/large_pipeline.py",
-        help="Python file to mutate (default: benchmarks/large_pipeline.py)",
+        default="benchmarks/comprehensive_polars_pipeline.py",
+        help="Python file to mutate (default: benchmarks/comprehensive_polars_pipeline.py)",
     )
     parser.add_argument(
         "--tests-dir",
         default="benchmarks/",
         help="Tests directory (default: benchmarks/)",
     )
+    parser.add_argument(
+        "--rows",
+        type=int,
+        default=5000,
+        help="Dataset size for benchmark (default: 5000 rows)",
+    )
 
     args = parser.parse_args()
 
     try:
         benchmark = MutmutBenchmark(args.target_file, args.tests_dir)
+        logger.info(f"Benchmark dataset size: {args.rows:,} rows")
         results = benchmark.run()
         return 0
     except FileNotFoundError as e:
