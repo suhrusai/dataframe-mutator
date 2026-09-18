@@ -37,7 +37,7 @@ class PolarsMutationFilter:
         self.skip_syntax_only = self.config.get("skip_syntax_only", True)
 
     def should_mutate(
-        self, original: str, mutated: str, context: Optional[str] = None
+        self, original: str, mutated: str, _context: Optional[str] = None
     ) -> bool:
         """Determine if a mutation is worth testing.
 
@@ -113,12 +113,9 @@ class PolarsMutationFilter:
 
         # Check if long strings changed (usually comments/docs)
         long_strings = r'"[^"]{20,}"'
-        if len(re.findall(long_strings, original)) != len(
+        return len(re.findall(long_strings, original)) != len(
             re.findall(long_strings, mutated)
-        ):
-            return True
-
-        return False
+        )
 
     @staticmethod
     def _is_syntax_only_change(original: str, mutated: str) -> bool:
@@ -135,10 +132,7 @@ class PolarsMutationFilter:
         orig_normalized = re.sub(r'\s+', '', original)
         mut_normalized = re.sub(r'\s+', '', mutated)
 
-        if orig_normalized == mut_normalized:
-            return True
-
-        return False
+        return orig_normalized == mut_normalized
 
 
 class FilterConfig:

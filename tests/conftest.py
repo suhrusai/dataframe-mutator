@@ -1,6 +1,7 @@
 """Pytest configuration for platform-specific tests."""
 
 import sys
+
 import pytest
 
 

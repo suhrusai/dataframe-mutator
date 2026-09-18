@@ -71,7 +71,7 @@ class DataframeMutatorPlugin:
             raise
 
     def register_filter(
-        self, mutmut_state: Any, should_mutate_func: Callable
+        self, mutmut_state: Any, _should_mutate_func: Callable
     ) -> None:
         """Register mutation filter with mutmut.
 

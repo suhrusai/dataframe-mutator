@@ -5,7 +5,6 @@ They use mocks to test plugin logic without requiring Polars.
 """
 
 import pytest
-from unittest.mock import Mock, MagicMock
 
 
 @pytest.mark.windows
@@ -23,7 +22,7 @@ class TestPluginWithMockedPolars:
 
     def test_filter_works_with_mocked_config(self):
         """Filter should work with mocked configuration."""
-        from dataframe_mutator.filters import PolarsMutationFilter, FilterConfig
+        from dataframe_mutator.filters import PolarsMutationFilter
 
         config_dict = {"skip_column_names": True}
         filter_obj = PolarsMutationFilter(config_dict)

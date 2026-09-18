@@ -4,8 +4,6 @@ Tests verify that dataframe-mutator integrates properly with mutmut
 as a plugin and provides Polars-specific mutation testing.
 """
 
-import pytest
-
 from dataframe_mutator.mutmut_plugin import DataframeMutatorPlugin, get_plugin
 
 

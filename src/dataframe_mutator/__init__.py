@@ -25,6 +25,6 @@ __all__ = [
     "FilterConfig",
     "PolarsMutationFilter",
     "SemanticMutationAnalyzer",
-    "get_plugin",
     "__version__",
+    "get_plugin",
 ]

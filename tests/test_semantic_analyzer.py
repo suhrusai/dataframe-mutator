@@ -4,8 +4,6 @@ Tests verify that the analyzer correctly understands Polars code
 and can identify mutations that are semantically meaningful.
 """
 
-import pytest
-
 from dataframe_mutator.filters import SemanticMutationAnalyzer
 
 

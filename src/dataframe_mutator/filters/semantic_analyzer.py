@@ -7,7 +7,7 @@ and determine which mutations are likely to be meaningful.
 import ast
 import logging
 import re
-from typing import Dict, List, Set
+from typing import Dict, Set
 
 logger = logging.getLogger(__name__)
 
@@ -77,13 +77,13 @@ class SemanticMutationAnalyzer:
         class ColumnVisitor(ast.NodeVisitor):
             def visit_Call(self, node):
                 # Look for pl.col("name") patterns
-                if isinstance(node.func, ast.Attribute):
-                    if (
-                        node.func.attr == "col"
-                        and node.args
-                        and isinstance(node.args[0], ast.Constant)
-                    ):
-                        columns.add(node.args[0].value)
+                if (
+                    isinstance(node.func, ast.Attribute)
+                    and node.func.attr == "col"
+                    and node.args
+                    and isinstance(node.args[0], ast.Constant)
+                ):
+                    columns.add(node.args[0].value)
                 self.generic_visit(node)
 
         if self.tree:
@@ -101,9 +101,8 @@ class SemanticMutationAnalyzer:
 
         class OperationVisitor(ast.NodeVisitor):
             def visit_Attribute(self, node):
-                if hasattr(node.value, "id"):
-                    if node.value.id == "pl":
-                        operations.add(node.attr)
+                if hasattr(node.value, "id") and node.value.id == "pl":
+                    operations.add(node.attr)
                 self.generic_visit(node)
 
         if self.tree:
@@ -209,12 +208,9 @@ class SemanticMutationAnalyzer:
             return True
 
         # Different aggregations = significant
-        if self._extract_aggregations(original) != self._extract_aggregations(
+        return self._extract_aggregations(original) != self._extract_aggregations(
             mutated
-        ):
-            return True
-
-        return False
+        )
 
     @staticmethod
     def _extract_operations(code: str) -> Set[str]:
