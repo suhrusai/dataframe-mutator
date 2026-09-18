@@ -19,3 +19,5 @@ pythonpath = ["."]
 [tool.mutmut]
 source_paths = ["polars_code"]
 python_targets = "3.11"
+# Use the dataframe-mutator filter to skip low-value mutations
+plugins = ["dataframe_mutator.mutmut_plugin"]
