@@ -151,6 +151,8 @@ def get_plugin() -> DataframeMutatorPlugin:
 def polars_filter(original: str, mutated: str) -> bool:
     """Mutation filter for Polars code - entry point for mutmut.
 
+    Fast filter without AST parsing to avoid slowdown.
+
     Args:
         original: Original code
         mutated: Mutated code
@@ -158,10 +160,33 @@ def polars_filter(original: str, mutated: str) -> bool:
     Returns:
         True if mutation should be tested, False to skip
     """
-    from .filters import PolarsMutationFilter
+    try:
+        # Quick checks without expensive AST parsing
 
-    global _filter_instance
-    if _filter_instance is None:
-        _filter_instance = PolarsMutationFilter()
+        # Skip if no actual change
+        if original == mutated:
+            return False
 
-    return _filter_instance.should_mutate(original, mutated)
+        # Skip column name mutations (quotes differ, code structure same)
+        import re
+        col_pattern = r'["\'][^"\']*["\']'
+        orig_no_strings = re.sub(col_pattern, "QUOTED", original)
+        mut_no_strings = re.sub(col_pattern, "QUOTED", mutated)
+        if orig_no_strings == mut_no_strings:
+            logger.debug("Skipping string literal mutation")
+            return False
+
+        # Skip whitespace-only changes
+        orig_normalized = re.sub(r"\s+", "", original)
+        mut_normalized = re.sub(r"\s+", "", mutated)
+        if orig_normalized == mut_normalized:
+            logger.debug("Skipping whitespace-only change")
+            return False
+
+        # All other mutations should be tested
+        return True
+
+    except Exception as e:
+        logger.error(f"Error in polars_filter: {e}")
+        # On error, let the mutation through (return True)
+        return True
