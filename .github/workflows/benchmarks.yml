@@ -58,18 +58,23 @@ jobs:
 
       - name: Run TPC-H Benchmark (Industry Standard)
         run: |
-          pytest benchmarks/test_tpch_inspired_workload.py -v --tb=short
+          pytest benchmarks/test_tpch_inspired_workload.py -v --tb=short --durations=10 > tpch-results.txt 2>&1
+          cat tpch-results.txt
 
       - name: Run Comprehensive Benchmarks
         run: |
-          pytest benchmarks/test_extensive_polars_operations.py -v --tb=short
+          pytest benchmarks/test_extensive_polars_operations.py -v --tb=short --durations=10 > comprehensive-results.txt 2>&1
+          cat comprehensive-results.txt
 
-      - name: Capture benchmark results
+      - name: Capture benchmark results with metrics
         if: always()
         run: |
           mkdir -p benchmark-reports
-          echo "${{ matrix.os }},${{ matrix.arch }},TPC-H,28 tests,✅" > benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-results.txt
-          echo "Benchmark results captured for ${{ matrix.os }} (${{ matrix.arch }})"
+          echo "Platform: ${{ matrix.os }}" > benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
+          echo "Architecture: ${{ matrix.arch }}" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
+          echo "" >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt
+          grep -E "passed|failed|error" tpch-results.txt >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt || true
+          grep -E "passed|failed|error" comprehensive-results.txt >> benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt || true
 
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
