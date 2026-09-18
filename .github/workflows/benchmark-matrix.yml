@@ -41,11 +41,9 @@ jobs:
 
           # Debug: verify files and tests exist
           echo "Source files:"
-          find src -name "*.py" | head -10
+          find polars_code -name "*.py" | head -10
           echo "Test files:"
           find tests -name "test_*.py" | head -10
-          echo "Running pytest first to verify tests work:"
-          python -m pytest tests/ -v --tb=short 2>&1 | head -30
 
           START=$(date +%s%N)
           python -m pytest tests/ -q > /dev/null 2>&1
@@ -233,31 +231,37 @@ jobs:
           mut_reduction = m_v_avg - m_p_avg
           mut_pct = (mut_reduction / m_v_avg * 100) if m_v_avg > 0 else 0
 
+          # Safe variance calculation
+          v_variance = ((v_max - v_min) / v_avg * 100) if v_avg > 0 else 0
+          p_variance = ((p_max - p_min) / p_avg * 100) if p_avg > 0 else 0
+          v_pct_faster = (time_saved / v_avg * 100) if v_avg > 0 else 0
+
           # Generate report
-          report = f"""
+          if v_count == 0:
+              report = "No benchmark data collected. Check that mutmut ran successfully."
+          else:
+              report = f"""
           # Benchmark Analysis Report
 
           ## Execution Statistics
 
-          ### Vanilla Mutmut (10 runs)
+          ### Vanilla Mutmut ({v_count} runs)
           - Average: {v_avg:.3f}s
           - Min: {v_min:.3f}s
           - Max: {v_max:.3f}s
-          - Runs: {v_count}
-          - Variance: {((v_max - v_min) / v_avg * 100):.1f}%
+          - Variance: {v_variance:.1f}%
 
-          ### Plugin Mutmut (10 runs)
+          ### Plugin Mutmut ({p_count} runs)
           - Average: {p_avg:.3f}s
           - Min: {p_min:.3f}s
           - Max: {p_max:.3f}s
-          - Runs: {p_count}
-          - Variance: {((p_max - p_min) / p_avg * 100):.1f}%
+          - Variance: {p_variance:.1f}%
 
           ## Performance Metrics
 
           - **Speedup Factor:** {speedup:.2f}x
           - **Time Saved:** {time_saved:.3f}s
-          - **Percentage Faster:** {(time_saved / v_avg * 100):.1f}%
+          - **Percentage Faster:** {v_pct_faster:.1f}%
 
           ## Mutation Filtering
 
@@ -268,8 +272,8 @@ jobs:
 
           ## Statistical Summary
 
-          **Vanilla:** {v_count} runs, avg {v_avg:.3f}s ± {((v_max - v_min) / v_avg * 100):.1f}%
-          **Plugin:** {p_count} runs, avg {p_avg:.3f}s ± {((p_max - p_min) / p_avg * 100):.1f}%
+          **Vanilla:** {v_count} runs, avg {v_avg:.3f}s ± {v_variance:.1f}%
+          **Plugin:** {p_count} runs, avg {p_avg:.3f}s ± {p_variance:.1f}%
 
           **Conclusion:** Plugin delivers {speedup:.2f}x speedup with {mut_pct:.1f}% mutation filtering.
           """
