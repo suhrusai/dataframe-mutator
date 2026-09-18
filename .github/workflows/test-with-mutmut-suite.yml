@@ -63,7 +63,7 @@ jobs:
       - name: Run specific mutation tests with plugin
         run: |
           cd mutmut
-          python -m pytest tests/test_mutators.py -v -k "test_" 2>&1 | head -100 || true
+          python -m pytest tests/test_mutators.py -v -k "test_" 2>&1 | head -100
 
       - name: Validate plugin compatibility
         run: |
@@ -178,7 +178,7 @@ jobs:
           # Run mutmut with plugin
           cd test_project
           echo "Running mutmut with our plugin..."
-          mutmut run --paths src/ --tests-dir tests/ --simple-output 2>&1 || true
+          mutmut run --paths src/ --tests-dir tests/ --simple-output 2>&1
 
       - name: Plugin Status Report
         run: |

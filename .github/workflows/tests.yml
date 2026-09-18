@@ -65,17 +65,14 @@ jobs:
       - name: Lint with ruff
         run: |
           ruff check src/ tests/
-        continue-on-error: true
 
       - name: Format check with black
         run: |
           black --check src/ tests/
-        continue-on-error: true
 
       - name: Type check with mypy
         run: |
           mypy src/ --ignore-missing-imports
-        continue-on-error: true
 
       - name: Run tests with pytest
         run: |
