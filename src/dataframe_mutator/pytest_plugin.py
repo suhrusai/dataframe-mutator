@@ -1,9 +1,10 @@
 """pytest plugin for mutation testing integration."""
 
-import pytest
 from pathlib import Path
+
+import pytest
+
 from .polars import SmartPolarsTestRunner
-from .config import MutationConfig
 
 
 def pytest_addoption(parser):
@@ -42,19 +43,17 @@ def pytest_collection_modifyitems(config, items):
 
 
 @pytest.fixture(scope="session")
-def mutation_tester(request):
+def mutation_tester():
     """Provide mutation tester fixture."""
-    cfg = MutationConfig.from_toml()
     return SmartPolarsTestRunner(test_command="pytest")
 
 
-def pytest_terminal_summary(terminalreporter, exitstatus, config):
+def pytest_terminal_summary(terminalreporter, config):
     """Add mutation testing summary to pytest output."""
     if not config.getoption("--mutation"):
         return
 
     source_dir = config.getoption("--mutation-source")
-    threshold = config.getoption("--mutation-threshold")
 
     if not Path(source_dir).exists():
         terminalreporter.write_sep("=", "No source directory found", red=True)

@@ -73,10 +73,50 @@ target-version = ['py38', 'py39', 'py310', 'py311']
 [tool.ruff]
 line-length = 100
 target-version = "py38"
-select = ["E", "F", "W", "I"]
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    "build",
+    "dist",
+]
+
+[tool.ruff.lint]
+# Strict rule selection like Polars
+select = [
+    "E",      # pycodestyle errors
+    "F",      # Pyflakes
+    "W",      # pycodestyle warnings
+    "I",      # isort imports
+    "N",      # pep8-naming
+    "UP",     # pyupgrade
+    "C",      # flake8-comprehensions
+    "B",      # flake8-bugbear
+    "A",      # flake8-builtins
+    "C4",     # flake8-comprehensions
+    "T20",    # flake8-print
+    "SIM",    # flake8-simplify
+    "ARG",    # flake8-unused-arguments
+    "RUF",    # Ruff-specific rules
+]
+ignore = [
+    "E501",   # Line too long (handled by black)
+    "W505",   # Doc line too long
+    "N802",   # Function name should be lowercase (for test functions)
+    "N803",   # Argument name should be lowercase
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ARG001"]  # Test functions don't need to use all args
+"__init__.py" = ["F401"]  # Imports may be used for re-export
 
 [tool.mypy]
 python_version = "3.8"
 warn_return_any = true
 warn_unused_configs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
 disallow_untyped_defs = false
+no_implicit_optional = true
+check_untyped_defs = true
+strict_optional = true

@@ -1,9 +1,10 @@
 """Report generation and export functionality."""
 
 import json
-from pathlib import Path
 from datetime import datetime
-from typing import Dict, Any, Optional
+from pathlib import Path
+from typing import Any, Dict
+
 from .config import MutationConfig
 
 

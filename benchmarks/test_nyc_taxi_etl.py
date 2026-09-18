@@ -3,8 +3,9 @@
 These tests validate all operations in the production ETL pipeline.
 """
 
-import pytest
 import polars as pl
+import pytest
+
 from benchmarks.nyc_taxi_etl import NYCTaxiETL
 
 
@@ -206,7 +207,7 @@ class TestAnomalyDetection:
         result = NYCTaxiETL.identify_peak_hours(categorized)
 
         # Peak hours should be flagged
-        assert all(result["is_peak_hour"] == True)
+        assert all(result["is_peak_hour"])
 
     def test_unusual_trip_detection(self, sample_taxi_data):
         """Verify unusual trip detection."""

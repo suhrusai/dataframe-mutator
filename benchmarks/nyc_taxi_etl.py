@@ -7,8 +7,8 @@ Download sample data:
     wget https://d37ci6vzch7kqd.cloudfront.net/trip-data/yellow_tripdata_2024-01.parquet
 """
 
+
 import polars as pl
-from datetime import datetime, timedelta
 
 
 class NYCTaxiETL:
@@ -167,7 +167,7 @@ class NYCTaxiETL:
                 (pl.col("hourly_trips") > avg_trips * 1.5)
                 .alias("is_peak_hour"),
             ])
-            .filter(pl.col("is_peak_hour") == True)
+            .filter(pl.col("is_peak_hour"))
             .sort("hourly_trips", descending=True)
         )
 

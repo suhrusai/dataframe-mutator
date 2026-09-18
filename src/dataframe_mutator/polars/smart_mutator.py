@@ -9,8 +9,8 @@ This module provides intelligent mutation testing by:
 
 import ast
 import re
-from typing import List, Tuple, Set
 from dataclasses import dataclass
+from typing import List, Set, Tuple
 
 
 @dataclass
@@ -41,10 +41,13 @@ class PolarsASTAnalyzer:
         class ColumnVisitor(ast.NodeVisitor):
             def visit_Call(self, node):
                 # Look for pl.col("name") patterns
-                if isinstance(node.func, ast.Attribute):
-                    if node.func.attr == "col":
-                        if node.args and isinstance(node.args[0], ast.Constant):
-                            columns.add(node.args[0].value)
+                if (
+                    isinstance(node.func, ast.Attribute)
+                    and node.func.attr == "col"
+                    and node.args
+                    and isinstance(node.args[0], ast.Constant)
+                ):
+                    columns.add(node.args[0].value)
                 self.generic_visit(node)
 
         ColumnVisitor().visit(self.tree)
@@ -59,10 +62,13 @@ class PolarsASTAnalyzer:
         class StructVisitor(ast.NodeVisitor):
             def visit_Call(self, node):
                 # Look for .struct.field patterns
-                if isinstance(node.func, ast.Attribute):
-                    if node.func.attr in ["field", "extract"]:
-                        if node.args and isinstance(node.args[0], ast.Constant):
-                            fields.add(node.args[0].value)
+                if (
+                    isinstance(node.func, ast.Attribute)
+                    and node.func.attr in ["field", "extract"]
+                    and node.args
+                    and isinstance(node.args[0], ast.Constant)
+                ):
+                    fields.add(node.args[0].value)
                 self.generic_visit(node)
 
         StructVisitor().visit(self.tree)
@@ -105,12 +111,8 @@ class SmartPolarsFilter:
         if string_value in self.struct_fields:
             return False
 
-        # Don't mutate join keys that reference columns
-        if "on=" in context and string_value in self.column_names:
-            return False
-
-        # Safe to mutate
-        return True
+        # Safe to mutate unless it's a join key that references columns
+        return not ("on=" in context and string_value in self.column_names)
 
     def should_mutate_operator(self, operator: str, context: str) -> bool:
         """Determine if an operator mutation is valuable.
@@ -134,10 +136,7 @@ class SmartPolarsFilter:
             return True
 
         # VALUABLE: Lazy/collect toggling (catches optimization bugs)
-        if operator in ["lazy", "collect"]:
-            return True
-
-        return False
+        return operator in ["lazy", "collect"]
 
     def get_filtering_patterns(self) -> dict:
         """Get regex patterns for low-value mutations to skip."""

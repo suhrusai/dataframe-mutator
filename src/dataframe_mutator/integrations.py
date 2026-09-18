@@ -1,10 +1,13 @@
 """Integrations with external services and tools."""
 
 import json
+import logging
 import os
-from typing import Dict, Any, Optional
-from urllib.request import urlopen, Request
 from pathlib import Path
+from typing import Any, Dict, Optional
+from urllib.request import Request, urlopen
+
+logger = logging.getLogger(__name__)
 
 
 class SlackNotifier:
@@ -13,22 +16,31 @@ class SlackNotifier:
     def __init__(self, webhook_url: str):
         self.webhook_url = webhook_url
 
-    def notify(self, results: Dict[str, Any], threshold: float = 0.85) -> None:
+    def notify(self, results: Dict[str, Any]) -> None:
         """Send Slack notification."""
         total_mutations = sum(r.get("high_value_mutations", 0) for r in results.values())
-        avg_false_pos = sum(r.get("potential_false_positives_avoided", 0) for r in results.values()) / len(results) if results else 0
+        avg_false_pos = (
+            sum(r.get("potential_false_positives_avoided", 0) for r in results.values())
+            / len(results)
+            if results
+            else 0
+        )
 
         color = "good" if total_mutations > 0 else "danger"
 
         payload = {
             "attachments": [{
                 "color": color,
-                "title": "🧬 Mutation Testing Results",
+                "title": "Mutation Testing Results",
                 "fields": [
                     {"title": "Total Mutations", "value": str(total_mutations), "short": True},
                     {"title": "Files Analyzed", "value": str(len(results)), "short": True},
                     {"title": "False Positives Avoided", "value": f"{avg_false_pos:.1f}%", "short": True},
-                    {"title": "Status", "value": "✅ Pass" if total_mutations > 0 else "⚠️ No mutations", "short": True},
+                    {
+                        "title": "Status",
+                        "value": "Pass" if total_mutations > 0 else "No mutations",
+                        "short": True,
+                    },
                 ]
             }]
         }
@@ -41,7 +53,7 @@ class SlackNotifier:
             )
             urlopen(req)
         except Exception as e:
-            print(f"Warning: Failed to send Slack notification: {e}")
+            logger.warning(f"Failed to send Slack notification: {e}")
 
 
 class GitHubAnnotator:
@@ -62,7 +74,7 @@ class GitHubAnnotator:
                 level = "notice"
                 msg = f"{mutations} high-value mutations found"
 
-            print(f"::{level} file={file}::{msg}")
+            logger.info(f"::{level} file={file}::{msg}")
 
 
 class CustomOperatorRegistry:
@@ -149,10 +161,10 @@ class ParallelMutationRunner:
 
     def run_parallel(self, mutations: list, test_command: str) -> Dict[str, bool]:
         """Run mutations in parallel."""
-        from multiprocessing import Pool
         import subprocess
+        from multiprocessing import Pool
 
-        def run_mutation(mutation_code: str) -> bool:
+        def run_mutation(_mutation_code: str) -> bool:
             try:
                 result = subprocess.run(
                     ["python", "-c", test_command],
@@ -161,7 +173,7 @@ class ParallelMutationRunner:
                     text=True
                 )
                 return result.returncode == 0
-            except:
+            except Exception:
                 return False
 
         with Pool(self.num_workers) as pool:

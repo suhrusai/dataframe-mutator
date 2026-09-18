@@ -1,11 +1,14 @@
 """Benchmarking suite comparing mutmut vs dataframe-mutator."""
 
-import time
-import subprocess
 import json
-from pathlib import Path
-from dataclasses import dataclass, asdict
+import logging
+import subprocess
+import time
+from dataclasses import asdict, dataclass
 from datetime import datetime
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -35,7 +38,7 @@ class BenchmarkRunner:
 
     def run_dataframe_mutator(self) -> BenchmarkResult:
         """Benchmark dataframe-mutator."""
-        print("\n[BENCHMARK] Running dataframe-mutator...")
+        logger.info("Running dataframe-mutator...")
 
         start = time.time()
 
@@ -62,16 +65,18 @@ class BenchmarkRunner:
                 timestamp=datetime.now().isoformat()
             )
 
-            print(f"[OK] dataframe-mutator: {elapsed:.2f}s, {result.mutations_tested} mutations")
+            logger.info(
+                f"dataframe-mutator: {elapsed:.2f}s, {result.mutations_tested} mutations"
+            )
             return result
 
         except Exception as e:
-            print(f"[ERROR] dataframe-mutator failed: {e}")
+            logger.error(f"dataframe-mutator failed: {e}")
             return None
 
     def run_mutmut(self) -> BenchmarkResult:
         """Benchmark vanilla mutmut."""
-        print("\n[BENCHMARK] Running mutmut...")
+        logger.info("Running mutmut...")
 
         start = time.time()
 
@@ -109,24 +114,24 @@ class BenchmarkRunner:
                 timestamp=datetime.now().isoformat()
             )
 
-            print(f"[OK] mutmut: {elapsed:.2f}s, {mutations_tested} mutations")
+            logger.info(f"mutmut: {elapsed:.2f}s, {mutations_tested} mutations")
             return benchmark_result
 
         except subprocess.TimeoutExpired:
-            print("[ERROR] mutmut timed out after 600 seconds")
+            logger.error("mutmut timed out after 600 seconds")
             return None
         except Exception as e:
-            print(f"[ERROR] mutmut failed: {e}")
+            logger.error(f"mutmut failed: {e}")
             return None
 
     def run_all(self) -> dict:
         """Run all benchmarks."""
-        print("=" * 70)
-        print("MUTATION TESTING BENCHMARK SUITE")
-        print("=" * 70)
-        print(f"\nTest Directory: {self.test_dir}")
-        print(f"Source File: {self.src_file}")
-        print(f"Test Command: {self.test_command}")
+        logger.info("=" * 70)
+        logger.info("MUTATION TESTING BENCHMARK SUITE")
+        logger.info("=" * 70)
+        logger.info(f"Test Directory: {self.test_dir}")
+        logger.info(f"Source File: {self.src_file}")
+        logger.info(f"Test Command: {self.test_command}")
 
         results = {}
 
@@ -149,28 +154,39 @@ class BenchmarkRunner:
         return results
 
     def _print_comparison(self):
-        """Print benchmark comparison."""
+        """Log benchmark comparison."""
         dm = self.results[0]
         mutmut = self.results[1]
 
-        print("\n" + "=" * 70)
-        print("BENCHMARK RESULTS")
-        print("=" * 70)
+        logger.info("=" * 70)
+        logger.info("BENCHMARK RESULTS")
+        logger.info("=" * 70)
 
-        print(f"\n{'Metric':<30} {'dataframe-mutator':<20} {'mutmut':<20}")
-        print("-" * 70)
-        print(f"{'Execution Time':<30} {dm.execution_time:>18.2f}s {mutmut.execution_time:>18.2f}s")
-        print(f"{'Mutations Tested':<30} {dm.mutations_tested:>18d} {mutmut.mutations_tested:>18d}")
-        print(f"{'False Positives Avoided':<30} {dm.score:>18.1f}% {mutmut.score:>18.1f}%")
+        logger.info(
+            f"{'Metric':<30} {'dataframe-mutator':<20} {'mutmut':<20}"
+        )
+        logger.info("-" * 70)
+        logger.info(
+            f"{'Execution Time':<30} {dm.execution_time:>18.2f}s "
+            f"{mutmut.execution_time:>18.2f}s"
+        )
+        logger.info(
+            f"{'Mutations Tested':<30} {dm.mutations_tested:>18d} "
+            f"{mutmut.mutations_tested:>18d}"
+        )
+        logger.info(
+            f"{'False Positives Avoided':<30} {dm.score:>18.1f}% "
+            f"{mutmut.score:>18.1f}%"
+        )
 
         speedup = mutmut.execution_time / dm.execution_time
-        print(f"\n{'SPEEDUP':<30} {speedup:>18.1f}x faster")
+        logger.info(f"SPEEDUP: {speedup:>18.1f}x faster")
 
         if speedup > 1:
             time_saved = mutmut.execution_time - dm.execution_time
-            print(f"{'Time Saved':<30} {time_saved:>18.2f}s")
+            logger.info(f"Time Saved: {time_saved:>18.2f}s")
 
-        print("\n" + "=" * 70)
+        logger.info("=" * 70)
 
     def save_results(self, output_file: str = "benchmarks/results.json"):
         """Save benchmark results to JSON."""
@@ -185,10 +201,14 @@ class BenchmarkRunner:
         with open(output_path, "w") as f:
             json.dump(data, f, indent=2)
 
-        print(f"\n[SAVE] Results saved to {output_file}")
+        logger.info(f"Results saved to {output_file}")
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s"
+    )
     runner = BenchmarkRunner()
     results = runner.run_all()
     runner.save_results()

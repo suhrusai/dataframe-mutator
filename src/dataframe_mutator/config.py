@@ -1,10 +1,12 @@
 """Configuration management for dataframe-mutator."""
 
 import json
-import sys
-from dataclasses import dataclass, field, asdict
+import logging
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
+
+logger = logging.getLogger(__name__)
 
 # Try to import tomllib (Python 3.11+)
 try:
@@ -71,7 +73,7 @@ class MutationConfig:
             config_data = data.get("dataframe-mutator", {})
             return cls(**config_data)
         except Exception as e:
-            print(f"Warning: Could not load config from {path}: {e}")
+            logger.warning(f"Could not load config from {path}: {e}")
             return cls()
 
     @classmethod
@@ -82,7 +84,7 @@ class MutationConfig:
                 data = json.load(f)
             return cls(**data)
         except Exception as e:
-            print(f"Warning: Could not load config from {path}: {e}")
+            logger.warning(f"Could not load config from {path}: {e}")
             return cls()
 
     def to_json(self, path: str) -> None:

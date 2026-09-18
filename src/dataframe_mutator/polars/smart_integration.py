@@ -1,8 +1,9 @@
 """Integration layer between smart Polars analysis and mutation testing."""
 
-from typing import List, Callable, Optional
-from ..core import MutationOperator, DataframeMutationTester
-from .smart_mutator import SmartPolarsRunner, SmartPolarsFilter
+from typing import List, Optional
+
+from ..core import DataframeMutationTester
+from .smart_mutator import SmartPolarsFilter, SmartPolarsRunner
 
 
 class SmartPolarsTestRunner(DataframeMutationTester):
@@ -39,15 +40,17 @@ class SmartPolarsTestRunner(DataframeMutationTester):
 
         # Skip mutations of column names (always fail)
         for col in filter_analyzer.column_names:
-            if f'"{col}"' in mutation or f"'{col}'" in mutation:
-                if code.count(f'"{col}"') != mutation.count(f'"{col}"'):
-                    return False
+            if (f'"{col}"' in mutation or f"'{col}'" in mutation) and (
+                code.count(f'"{col}"') != mutation.count(f'"{col}"')
+            ):
+                return False
 
         # Skip mutations of struct fields
         for field in filter_analyzer.struct_fields:
-            if f'"{field}"' in mutation or f"'{field}'" in mutation:
-                if code.count(f'"{field}"') != mutation.count(f'"{field}"'):
-                    return False
+            if (f'"{field}"' in mutation or f"'{field}'" in mutation) and (
+                code.count(f'"{field}"') != mutation.count(f'"{field}"')
+            ):
+                return False
 
         return True
 
@@ -108,10 +111,7 @@ class PolarsSemanticMutationValidator:
 
         # If only a string literal changed that's not a join parameter,
         # aggregation, or filter - probably low value
-        if _looks_like_low_value_string_mutation(original_code, mutated_code):
-            return False
-
-        return True
+        return not _looks_like_low_value_string_mutation(original_code, mutated_code)
 
     @staticmethod
     def categorize_mutation(
@@ -122,9 +122,12 @@ class PolarsSemanticMutationValidator:
         Returns:
             Category name like "join_type_change", "null_handling", etc.
         """
-        if "join" in mutated_code and "join" in original_code:
-            if mutated_code.replace("join", "X") != original_code.replace("join", "X"):
-                return "join_type_change"
+        if (
+            "join" in mutated_code
+            and "join" in original_code
+            and mutated_code.replace("join", "X") != original_code.replace("join", "X")
+        ):
+            return "join_type_change"
 
         if ".drop_nulls()" in original_code and ".fill_null(" in mutated_code:
             return "null_handling_change"
@@ -132,13 +135,13 @@ class PolarsSemanticMutationValidator:
         if ".lazy()" in original_code != ".lazy()" in mutated_code:
             return "lazy_evaluation_change"
 
-        if any(agg in original_code for agg in ["sum", "mean", "min", "max"]):
-            if original_code.replace("sum", "X") != mutated_code.replace("sum", "X"):
-                return "aggregation_swap"
+        if any(agg in original_code for agg in ["sum", "mean", "min", "max"]) and (
+            original_code.replace("sum", "X") != mutated_code.replace("sum", "X")
+        ):
+            return "aggregation_swap"
 
-        if ".filter(" in original_code:
-            if "==" in original_code and "!=" in mutated_code:
-                return "comparison_flip"
+        if ".filter(" in original_code and "==" in original_code and "!=" in mutated_code:
+            return "comparison_flip"
 
             if " & " in original_code and " | " in mutated_code:
                 return "boolean_operator_flip"
@@ -155,10 +158,7 @@ def _looks_like_column_name_change(original: str, mutated: str) -> bool:
     orig_cols = set(re.findall(col_pattern, original))
     mut_cols = set(re.findall(col_pattern, mutated))
 
-    if orig_cols != mut_cols:
-        return True
-
-    return False
+    return orig_cols != mut_cols
 
 
 def _looks_like_low_value_string_mutation(original: str, mutated: str) -> bool:
@@ -176,7 +176,4 @@ def _looks_like_low_value_string_mutation(original: str, mutated: str) -> bool:
         != len(re.findall(r'"[^"]{20,}"', mutated))
     )
 
-    if strings_changed:
-        return True
-
-    return False
+    return strings_changed

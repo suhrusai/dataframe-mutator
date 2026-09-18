@@ -1,49 +1,50 @@
 """Tests for 100% Polars API coverage operators (MR3 expansion)."""
 
 import pytest
+
 from dataframe_mutator.polars.operators import (
+    PolarsAsofJoinMutation,
+    PolarsDescribeMutation,
+    # Low-priority distinct
+    PolarsDistinctMaintainOrderMutation,
+    PolarsExcludeMutation,
+    PolarsFillNanMutation,
     # High-priority remaining
     PolarsFilterByDtypesMutation,
-    PolarsExcludeMutation,
+    PolarsGetItemMutation,
+    PolarsInfoMutation,
+    PolarsItemMutationExpanded,
+    PolarsListSortMutation,
+    # Medium-priority list
+    PolarsListUniqueMutation,
+    # Low-priority metadata
+    PolarsMetadataPropertyMutation,
     PolarsNthMutation,
-    PolarsAsofJoinMutation,
+    # Low-priority advanced
+    PolarsPartitionByMutation,
+    PolarsPivotTableMutation,
+    # Medium-priority I/O
+    PolarsReadCsvMutation,
+    PolarsReadJsonMutation,
+    PolarsReadParquetMutation,
+    PolarsRollingMeanMutation,
+    # Low-priority rows
+    PolarsRowsMultipleMutation,
+    PolarsSliceExpandMutation,
     PolarsSortByExprsMutation,
     # Medium-priority string
     PolarsStringConcatMutation,
-    PolarsStringZfillMutation,
     PolarsStringReplaceAllMutation,
-    # Medium-priority list
-    PolarsListUniqueMutation,
-    PolarsListSortMutation,
-    # Medium-priority I/O
-    PolarsReadCsvMutation,
-    PolarsReadParquetMutation,
-    PolarsReadJsonMutation,
-    PolarsWriteCsvMutation,
-    PolarsWriteParquetMutation,
     # Medium-priority type conversion
     PolarsStringToDateMutation,
     PolarsStringToDatetimeMutation,
-    PolarsStringToIntegerMutation,
     PolarsStringToFloatMutation,
-    PolarsFillNanMutation,
-    # Low-priority metadata
-    PolarsMetadataPropertyMutation,
-    PolarsDescribeMutation,
-    PolarsInfoMutation,
-    # Low-priority distinct
-    PolarsDistinctMaintainOrderMutation,
-    # Low-priority rows
-    PolarsRowsMultipleMutation,
-    # Low-priority advanced
-    PolarsPartitionByMutation,
-    PolarsRollingMeanMutation,
-    PolarsWithContextMutation,
+    PolarsStringToIntegerMutation,
+    PolarsStringZfillMutation,
     PolarsUnpivotExpandMutation,
-    PolarsPivotTableMutation,
-    PolarsItemMutationExpanded,
-    PolarsGetItemMutation,
-    PolarsSliceExpandMutation,
+    PolarsWithContextMutation,
+    PolarsWriteCsvMutation,
+    PolarsWriteParquetMutation,
 )
 
 
