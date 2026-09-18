@@ -1,10 +1,16 @@
 """Configuration management for dataframe-mutator."""
 
 import json
+import sys
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Optional, List
-import tomllib if hasattr(__import__("sys"), "version_info") and __import__("sys").version_info >= (3, 11) else None
+
+# Try to import tomllib (Python 3.11+)
+try:
+    import tomllib
+except ImportError:
+    tomllib = None
 
 
 @dataclass

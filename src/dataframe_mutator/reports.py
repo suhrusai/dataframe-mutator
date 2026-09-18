@@ -88,7 +88,7 @@ class HTMLReportGenerator:
     def generate(self, results: Dict[str, Any], output_path: str) -> None:
         """Generate HTML report."""
         html = self._build_html(results)
-        Path(output_path).write_text(html)
+        Path(output_path).write_text(html, encoding="utf-8")
 
     def _build_html(self, results: Dict[str, Any]) -> str:
         """Build HTML content."""

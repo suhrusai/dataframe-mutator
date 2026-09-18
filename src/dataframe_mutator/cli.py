@@ -41,8 +41,8 @@ def analyze(source, tests, config, output, threshold, parallel, workers, save_ba
     cfg.source_files = list(source)
     cfg.test_command = f"pytest {tests}"
 
-    click.echo(f"🔬 Analyzing {len(source)} file(s)...")
-    click.echo(f"📋 Test command: {cfg.test_command}")
+    click.echo(f"[*] Analyzing {len(source)} file(s)...")
+    click.echo(f"[TEST] Test command: {cfg.test_command}")
 
     try:
         tester = SmartPolarsTestRunner(
@@ -53,15 +53,15 @@ def analyze(source, tests, config, output, threshold, parallel, workers, save_ba
 
         all_results = {}
         for src_file in source:
-            click.echo(f"\n📄 {src_file}")
+            click.echo(f"\n[FILE] {src_file}")
             results = tester.analyze_mutation_efficiency(src_file)
             all_results[src_file] = results
 
-            click.echo(f"  ✅ High-value mutations: {results['high_value_mutations']}")
-            click.echo(f"  🎯 False positives avoided: {results['potential_false_positives_avoided']:.1f}%")
+            click.echo(f"  [OK] High-value mutations: {results['high_value_mutations']}")
+            click.echo(f"  [STAT] False positives avoided: {results['potential_false_positives_avoided']:.1f}%")
 
             if results['high_value_mutations'] == 0:
-                click.echo("  ⚠️  No mutations found!")
+                click.echo("  [WARN] No mutations found!")
 
         # Generate reports
         Path(cfg.output_dir).mkdir(exist_ok=True)
@@ -70,29 +70,29 @@ def analyze(source, tests, config, output, threshold, parallel, workers, save_ba
             if output == "json" or output == "html":
                 exporter = JSONExporter(cfg)
                 exporter.export(all_results, f"{cfg.output_dir}/results.json")
-                click.echo(f"\n📊 JSON report: {cfg.output_dir}/results.json")
+                click.echo(f"\n[REPORT] JSON report: {cfg.output_dir}/results.json")
 
             if output == "html":
                 generator = HTMLReportGenerator(cfg)
                 generator.generate(all_results, f"{cfg.output_dir}/report.html")
-                click.echo(f"📊 HTML report: {cfg.output_dir}/report.html")
+                click.echo(f"[REPORT] HTML report: {cfg.output_dir}/report.html")
 
         # Save baseline if requested
         if save_baseline:
             tracker = BaselineTracker(cfg)
             tracker.save_baseline(all_results)
-            click.echo(f"\n💾 Baseline saved: {cfg.baseline_path}")
+            click.echo(f"\n[SAVE] Baseline saved: {cfg.baseline_path}")
 
         # Check threshold
         avg_mutations = sum(r['high_value_mutations'] for r in all_results.values()) / len(all_results)
         if avg_mutations < cfg.min_mutations:
-            click.echo(f"\n❌ Below minimum mutations ({avg_mutations:.0f} < {cfg.min_mutations})")
+            click.echo(f"\n[FAIL] Below minimum mutations ({avg_mutations:.0f} < {cfg.min_mutations})")
             raise click.Exit(1)
 
-        click.echo("\n✅ Analysis complete!")
+        click.echo("\n[SUCCESS] Analysis complete!")
 
     except Exception as e:
-        click.echo(f"❌ Error: {e}", err=True)
+        click.echo(f"[ERROR] Error: {e}", err=True)
         raise click.Exit(1)
 
 
@@ -110,13 +110,13 @@ def check(source, tests, config):
     tracker = BaselineTracker(cfg)
 
     if not Path(cfg.baseline_path).exists():
-        click.echo("❌ No baseline found. Run with --save-baseline first.")
+        click.echo("[FAIL] No baseline found. Run with --save-baseline first.")
         raise click.Exit(1)
 
     tester = SmartPolarsTestRunner(test_command=cfg.test_command)
     baseline = tracker.load_baseline()
 
-    click.echo("📊 Comparing to baseline...")
+    click.echo("[*] Comparing to baseline...")
 
     all_pass = True
     for src_file in source:
@@ -126,16 +126,16 @@ def check(source, tests, config):
 
         change = current - baseline_val
         if change >= 0:
-            click.echo(f"✅ {src_file}: {current} mutations (+{change})")
+            click.echo(f"[OK] {src_file}: {current} mutations (+{change})")
         else:
-            click.echo(f"⚠️  {src_file}: {current} mutations ({change})")
+            click.echo(f"[WARN] {src_file}: {current} mutations ({change})")
             all_pass = False
 
     if not all_pass:
-        click.echo("\n⚠️  Some files have fewer mutations than baseline")
+        click.echo("\n[WARN] Some files have fewer mutations than baseline")
         raise click.Exit(1)
 
-    click.echo("\n✅ All files meet or exceed baseline!")
+    click.echo("\n[OK] All files meet or exceed baseline!")
 
 
 @cli.command()
@@ -145,7 +145,7 @@ def init(config):
 
     cfg = MutationConfig()
     cfg.to_json(config)
-    click.echo(f"✅ Created {config}")
+    click.echo(f"[OK] Created {config}")
     click.echo("Edit this file to customize mutation testing settings.")
 
 
