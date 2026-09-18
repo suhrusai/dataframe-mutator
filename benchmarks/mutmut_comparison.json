@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-09-17T20:57:36.286049",
+  "target_file": "benchmarks\\large_pipeline.py",
+  "tests_dir": "benchmarks",
+  "mutmut_only": {
+    "tool": "mutmut-only",
+    "error": "[WinError 2] The system cannot find the file specified"
+  },
+  "mutmut_with_plugin": {
+    "tool": "mutmut-with-plugin",
+    "error": "[WinError 2] The system cannot find the file specified"
+  }
+}
