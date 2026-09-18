@@ -52,13 +52,14 @@ jobs:
       - name: Check plugin loaded in mutmut tests
         run: |
           cd mutmut
-          python -c "
+          python << 'PYTHON_CHECK'
           from dataframe_mutator.mutmut_plugin import get_plugin
           plugin = get_plugin()
           print('✓ Plugin loaded successfully')
-          print(f'✓ Plugin instance: {plugin}')
-          print(f'✓ Operators registered: {len(plugin.operators)}')
-          "
+          print(f'✓ Plugin instance: {type(plugin).__name__}')
+          print(f'✓ Operators available: {len(plugin.operators)}')
+          print(f'✓ Plugin status:\n{plugin}')
+          PYTHON_CHECK
 
       - name: Run specific mutation tests with plugin
         run: |

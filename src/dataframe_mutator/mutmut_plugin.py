@@ -25,6 +25,14 @@ class DataframeMutatorPlugin:
         """Initialize the plugin."""
         self.operators_registered = False
         self.filter_registered = False
+
+        # Load operators on init
+        try:
+            from .operators import get_all_polars_operators
+            self.operators = get_all_polars_operators()
+        except Exception:
+            self.operators = []
+
         logger.info("Initializing dataframe-mutator mutmut plugin")
 
     def register_operators(self, mutmut_state: Any) -> None:
