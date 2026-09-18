@@ -11,9 +11,29 @@ on:
 
 jobs:
   benchmark:
-    # TPC-H benchmark uses 3.36M rows - needs adequate resources
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # TPC-H benchmark on multiple platforms and architectures
+    strategy:
+      matrix:
+        include:
+          # Linux x64 (primary)
+          - os: ubuntu-latest
+            python: '3.11'
+            arch: x64
+          # macOS Intel
+          - os: macos-15-intel
+            python: '3.11'
+            arch: x64
+          # Windows x64
+          - os: windows-latest
+            python: '3.11'
+            arch: x64
+          # Linux ARM64
+          - os: ubuntu-24.04-arm
+            python: '3.11'
+            arch: arm64
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v4
@@ -21,13 +41,19 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: ${{ matrix.python }}
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev,polars]"
           pip install mutmut
+
+      - name: Verify platform and architecture
+        run: |
+          echo "Running on: ${{ matrix.os }} (${{ matrix.arch }})"
+          python --version
+          python -c "import sys; print(f'Platform: {sys.platform}')"
 
       - name: Run TPC-H Benchmark (Industry Standard)
         run: |
@@ -46,8 +72,9 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: benchmark-results
+          name: benchmark-results-${{ matrix.os }}-${{ matrix.arch }}
           path: benchmarks/results.json
+          if-no-files-found: ignore
 
       - name: Comment PR with benchmark results
         if: github.event_name == 'pull_request'
