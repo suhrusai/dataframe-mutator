@@ -18,5 +18,4 @@ pythonpath = ["."]
 
 [tool.mutmut]
 source_paths = ["polars_code"]
-tests_dir = "tests"
 python_targets = "3.11"
