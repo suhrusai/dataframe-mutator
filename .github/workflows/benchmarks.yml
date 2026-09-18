@@ -211,7 +211,10 @@ jobs:
 
               // Add table rows
               for (const [key, data] of Object.entries(platformData)) {
-                comment += `| ${data.platformName} | ${data.arch} | ${data.tpch} tests | ${data.comp} tests | ✅ Passed |\n`;
+                const tpchNum = parseInt(data.tpch) || 0;
+                const compNum = parseInt(data.comp) || 0;
+                const status = (tpchNum > 0 && compNum > 0) ? '✅ Passed' : '⚠️ Check logs';
+                comment += `| ${data.platformName} | ${data.arch} | ${data.tpch} tests | ${data.comp} tests | ${status} |\n`;
               }
 
             } catch (e) {
