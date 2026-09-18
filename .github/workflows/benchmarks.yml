@@ -196,7 +196,7 @@ jobs:
                 if (platformMatch && archMatch) {
                   const os = platformMatch[1].trim();
                   const arch = archMatch[1].trim();
-                  const tpch = tphcMatch ? tphcMatch[1] : '?';
+                  const tpch = tpchMatch ? tpchMatch[1] : '?';
                   const comp = compMatch ? compMatch[1] : '?';
                   const platformName = platforms[os] || os;
 
