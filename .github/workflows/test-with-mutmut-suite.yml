@@ -41,7 +41,7 @@ jobs:
         run: |
           cd mutmut
           python -m pip install -e ".[dev]"
-          pip install pytest pytest-cov pytest-asyncio inline-snapshot
+          pip install pytest pytest-cov pytest-asyncio inline-snapshot pyrefly mypy
 
       - name: Run mutmut's test suite
         run: |
