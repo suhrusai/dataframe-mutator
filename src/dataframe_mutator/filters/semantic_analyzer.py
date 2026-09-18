@@ -49,9 +49,17 @@ class SemanticMutationAnalyzer:
 
     def _analyze(self) -> None:
         """Analyze AST and extract Polars patterns."""
+        # Initialize empty sets
+        self.columns = set()
+        self.operations = set()
+        self.aggregations = set()
+        self.filters = set()
+        self.joins = set()
+
         if not self.tree:
             return
 
+        # Populate with analyzed values
         self.columns = self._find_columns()
         self.operations = self._find_operations()
         self.aggregations = self._find_aggregations()
@@ -124,7 +132,7 @@ class SemanticMutationAnalyzer:
             Set of filter operators (>, <, ==, !=, etc)
         """
         filters = set()
-        filter_pattern = r'(>|<|==|!=|>=|<=)'
+        filter_pattern = r'(==|!=|>=|<=|>|<)'
 
         for match in re.finditer(filter_pattern, self.code):
             filters.add(match.group(1))
@@ -194,8 +202,10 @@ class SemanticMutationAnalyzer:
         if orig_ops != mut_ops:
             return True
 
-        # Different filters = significant
-        if self._extract_filters(original) != self._extract_filters(mutated):
+        # Different filter operators = significant
+        orig_filters = set(re.findall(r'(==|!=|>=|<=|>|<)', original))
+        mut_filters = set(re.findall(r'(==|!=|>=|<=|>|<)', mutated))
+        if orig_filters != mut_filters:
             return True
 
         # Different aggregations = significant
