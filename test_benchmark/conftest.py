@@ -1,36 +1,58 @@
 """Pytest configuration - integrates Polars mutation filter with mutmut."""
 
 import sys
-from datetime import datetime
+import datetime
+
+# Load mutmut hook to patch mutation generation at import time
+try:
+    import mutmut_hook
+    print("[conftest] Mutmut hook loaded for filtering", file=sys.stderr)
+except ImportError as e:
+    print(f"[conftest] Could not load mutmut hook: {e}", file=sys.stderr)
+except Exception as e:
+    print(f"[conftest] Error loading mutmut hook: {e}", file=sys.stderr)
+    import traceback
+    traceback.print_exc()
 
 
-def pytest_configure(config):
-    """Hook called after command line options have been parsed."""
-    try:
-        # Inject our filter into mutmut's mutation system
-        from dataframe_mutator.mutmut_plugin import polars_filter
+# Original pytest fixtures
+import pytest
+import polars as pl
 
-        # Patch mutmut's mutation handler to use our filter
-        import mutmut.mutant_runner
 
-        original_is_killed = mutmut.mutant_runner.is_mutation_killed
+@pytest.fixture
+def transactions_df():
+    """Create sample transactions DataFrame."""
+    n = 5000
+    return pl.DataFrame({
+        "transaction_id": list(range(1, n + 1)),
+        "account_id": [i % 100 + 1 for i in range(n)],
+        "amount": [(i * 1.37 + 50) % 10000 for i in range(n)],
+        "category": [["groceries", "gas", "restaurants", "retail"][i % 4] for i in range(n)],
+        "status": [["completed", "pending", "failed"][i % 3] for i in range(n)],
+        "timestamp": [
+            datetime.datetime(2024, 1, 1) + datetime.timedelta(minutes=i % (365 * 24 * 60))
+            for i in range(n)
+        ],
+    })
 
-        def is_mutation_killed_with_filter(mutant, tests_dirs, coverage_data, dict_synonyms, *args, **kwargs):
-            """Wrapper that filters mutations before testing."""
-            # Check if this mutation should be tested
-            original = mutant.original_source
-            mutated = mutant.mutated_source
 
-            if not polars_filter(original, mutated):
-                # Skip this mutation (return as if killed - won't appear in results)
-                print(f"[FILTER] Skipping mutation: {original[:30]}... → {mutated[:30]}...", file=sys.stderr)
-                return True  # Mark as handled
+@pytest.fixture
+def accounts_df():
+    """Create sample accounts DataFrame."""
+    return pl.DataFrame({
+        "account_id": list(range(1, 101)),
+        "balance": [i * 1000 for i in range(1, 101)],
+        "account_type": [["checking", "savings"][i % 2] for i in range(100)],
+    })
 
-            # Otherwise, test normally
-            return original_is_killed(mutant, tests_dirs, coverage_data, dict_synonyms, *args, **kwargs)
 
-        mutmut.mutant_runner.is_mutation_killed = is_mutation_killed_with_filter
-        print("[conftest] Polars filter injected into mutmut", file=sys.stderr)
-
-    except Exception as e:
-        print(f"[conftest] Warning: Could not inject filter: {e}", file=sys.stderr)
+@pytest.fixture
+def small_df():
+    """Create small test DataFrame."""
+    return pl.DataFrame({
+        "id": list(range(100)),
+        "amount": [i * 10 for i in range(100)],
+        "category": [["A", "B", "C"][i % 3] for i in range(100)],
+        "status": [["active", "inactive"][i % 2] for i in range(100)],
+    })
