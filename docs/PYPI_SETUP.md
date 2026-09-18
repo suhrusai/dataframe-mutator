@@ -6,135 +6,71 @@ This document outlines the steps to finalize PyPI publishing setup for dataframe
 
 ✅ Updated `pyproject.toml` with author email  
 ✅ Created GitHub Actions workflow (`.github/workflows/publish.yml`)  
+✅ Configured to use `PYPI_TOKEN` from GitHub environment secrets  
 
-## Next Steps to Complete Setup
+## How It Works
 
-### 1. Configure PyPI Publishers (OIDC)
+The workflow uses your existing `PYPI_TOKEN` from GitHub secrets to authenticate with PyPI. When you create a release, the workflow automatically:
 
-This is the secure, modern way to publish without storing API tokens.
+1. Checks out your code
+2. Builds the distribution (`.whl` and `.tar.gz`)
+3. Publishes to PyPI using your token
 
-#### For TestPyPI:
+No additional setup needed beyond what you've already done!
 
-1. Go to https://test.pypi.org/account/register/ (create account if needed)
-2. Navigate to **Account settings** → **Publishing**
-3. Click **"Add a new pending publisher"**
-4. Fill in these fields:
-   - **PyPI Project Name:** `dataframe-mutator`
-   - **Owner:** `suhrusai` (your GitHub username)
-   - **Repository name:** `dataframe-mutator`
-   - **Workflow name:** `publish.yml`
-   - **Environment name:** `testpypi`
-
-#### For PyPI (Production):
-
-1. Go to https://pypi.org/account/register/ (create account if needed)
-2. Navigate to **Account settings** → **Publishing**
-3. Click **"Add a new pending publisher"**
-4. Fill in these fields:
-   - **PyPI Project Name:** `dataframe-mutator`
-   - **Owner:** `suhrusai`
-   - **Repository name:** `dataframe-mutator`
-   - **Workflow name:** `publish.yml`
-   - **Environment name:** `pypi`
-
-### 2. Create GitHub Environments (Optional but Recommended)
-
-For better control, set up GitHub Actions environments:
-
-1. Go to your repo **Settings** → **Environments**
-2. Create two environments:
-   - **Name:** `testpypi`
-   - **Name:** `pypi` (restrict to main branch for safety)
-
-### 3. Test the Setup
-
-#### Option A: Create a test release
-
-```bash
-git tag -a v0.1.0 -m "Test release"
-git push origin v0.1.0
-```
-
-Then go to your repo → **Releases** and publish it.
-
-#### Option B: Manually test packaging
-
-```bash
-pip install build
-python -m build
-ls dist/  # Should see .whl and .tar.gz files
-```
-
-### 4. Publish Your First Release
+## Publish Your First Release
 
 When ready to release:
 
 ```bash
-# Ensure you're on main branch with clean state
-git checkout main
-git pull origin main
-
-# Create a git tag (semantic versioning recommended)
+# 1. Update version in pyproject.toml if needed
+# 2. Create a git tag (semantic versioning recommended)
 git tag -a v0.1.0 -m "Release version 0.1.0"
 git push origin v0.1.0
 
-# Go to GitHub and create a release from the tag
-# The workflow will automatically trigger
+# 3. Go to GitHub repo → "Create a new release"
+#    Select the tag and publish the release
 ```
 
-## How It Works
+The workflow will automatically trigger and publish to PyPI!
 
-1. **You create a GitHub release** with a git tag
-2. **Workflow triggers** on `release: published` event
-3. **Build step** creates `.whl` and `.tar.gz` files
-4. **Publish step** uses OIDC to authenticate (no API token needed!)
-5. **PyPI receives** your package
+## Testing Your Setup
 
-## Benefits of OIDC
+### Manually test packaging:
 
-✅ **No API tokens to manage** - GitHub generates temporary credentials  
-✅ **Automatic token rotation** - Each publish gets a fresh token  
-✅ **More secure** - Tokens never stored in GitHub secrets  
-✅ **Fine-grained permissions** - Only allows publishing this package  
-✅ **Audit trail** - PyPI can trace publishes back to your workflow  
-
-## Troubleshooting
-
-### Publisher Not Found
-**Error:** "No PyPI publisher trusted this workflow"
-
-**Solution:** Ensure the publisher fields exactly match:
-- Environment name matches your workflow
-- Owner/repository match your GitHub repo
-- Workflow name is `publish.yml`
-
-### Build Failures
-**Error:** "No module named 'build'"
-
-**Solution:** The workflow installs this automatically, but verify:
 ```bash
 pip install build
 python -m build
+ls dist/  # Should see .tar.gz and .whl files
 ```
 
-### Test Push to TestPyPI
-Before publishing to production, test with TestPyPI:
-```bash
-python -m twine upload --repository testpypi dist/*
-```
+### Verify on PyPI
 
-## Next Release Flow
+After publishing, check:
+- https://pypi.org/project/dataframe-mutator/
 
-Once set up:
+## Release Flow (Going Forward)
 
 ```bash
-# 1. Update version in pyproject.toml
-# 2. Commit changes
-# 3. Create tag
-git tag -a v0.1.1 -m "Release v0.1.1"
-git push origin v0.1.1
-# 4. Create release on GitHub (auto-publishes)
+# Update version in pyproject.toml
+# Make your changes and commit
+
+# Create release tag
+git tag -a v0.2.0 -m "Release v0.2.0"
+git push origin v0.2.0
+
+# Create GitHub release (auto-publishes)
 ```
+
+## Troubleshooting
+
+### Build Failures
+Check the workflow logs in your GitHub repo → **Actions** tab
+
+### Token Issues
+Verify `PYPI_TOKEN` is set in your environment secrets:
+- Go to repo **Settings** → **Secrets and variables** → **Actions**
+- Check that `PYPI_TOKEN` exists
 
 ## Documentation
 
