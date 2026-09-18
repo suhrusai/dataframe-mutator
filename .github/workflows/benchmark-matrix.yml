@@ -56,9 +56,10 @@ jobs:
           DURATION_MS=$(( (END - START) / 1000000 ))
           DURATION_S=$(echo "scale=3; $DURATION_MS / 1000" | bc)
 
-          MUTATIONS=$(grep -oP 'Mutants created: \K[0-9]+' /tmp/vanilla_${{ matrix.run }}.log | head -1 || echo "0")
-          KILLED=$(grep -oP 'Mutants killed: \K[0-9]+' /tmp/vanilla_${{ matrix.run }}.log | head -1 || echo "0")
-          SURVIVED=$(grep -oP 'Mutants survived: \K[0-9]+' /tmp/vanilla_${{ matrix.run }}.log | head -1 || echo "0")
+          # Extract mutations from mutmut output (format: "⠙ 134/134  🎉 98 🫥 0")
+          MUTATIONS=$(grep -oP '[0-9]+/\K[0-9]+' /tmp/vanilla_${{ matrix.run }}.log | head -1 || echo "0")
+          KILLED=$(grep -oP '🎉\s*\K[0-9]+' /tmp/vanilla_${{ matrix.run }}.log | head -1 || echo "0")
+          SURVIVED=$(grep -oP '🫥\s*\K[0-9]+' /tmp/vanilla_${{ matrix.run }}.log | head -1 || echo "0")
 
           echo "=============================================="
           echo "Run ${{ matrix.run }}/10 Results (Vanilla)"
@@ -127,9 +128,10 @@ jobs:
           DURATION_MS=$(( (END - START) / 1000000 ))
           DURATION_S=$(echo "scale=3; $DURATION_MS / 1000" | bc)
 
-          MUTATIONS=$(grep -oP 'Mutants created: \K[0-9]+' /tmp/plugin_${{ matrix.run }}.log | head -1 || echo "0")
-          KILLED=$(grep -oP 'Mutants killed: \K[0-9]+' /tmp/plugin_${{ matrix.run }}.log | head -1 || echo "0")
-          SURVIVED=$(grep -oP 'Mutants survived: \K[0-9]+' /tmp/plugin_${{ matrix.run }}.log | head -1 || echo "0")
+          # Extract mutations from mutmut output (format: "⠙ 134/134  🎉 98 🫥 0")
+          MUTATIONS=$(grep -oP '[0-9]+/\K[0-9]+' /tmp/plugin_${{ matrix.run }}.log | head -1 || echo "0")
+          KILLED=$(grep -oP '🎉\s*\K[0-9]+' /tmp/plugin_${{ matrix.run }}.log | head -1 || echo "0")
+          SURVIVED=$(grep -oP '🫥\s*\K[0-9]+' /tmp/plugin_${{ matrix.run }}.log | head -1 || echo "0")
 
           echo "=============================================="
           echo "Run ${{ matrix.run }}/10 Results (Plugin)"
