@@ -39,20 +39,26 @@ def large_dataset() -> "Tuple[pl.DataFrame, pl.DataFrame, pl.DataFrame]":
     )
 
     n_rows = 50000
+    regions = ["North", "South", "East", "West", "Central"]
+    categories = ["Electronics", "Clothing", "Food", "Books", "Home"]
+    statuses = ["completed", "pending", "failed"]
+    payment_methods = ["card", "cash", "check", "transfer"]
+
     transactions = pl.DataFrame({
         "transaction_id": list(range(1, n_rows + 1)),
         "date": [dates[i % len(dates)] for i in range(n_rows)],
         "customer_id": [f"CUST_{i % 5000}" for i in range(n_rows)],
         "amount": [100 + (i * 0.73) % 10000 for i in range(n_rows)],
         "quantity": [1 + (i % 100) for i in range(n_rows)],
-        "region": ["North", "South", "East", "West", "Central"] * (n_rows // 5),
-        "category": ["Electronics", "Clothing", "Food", "Books", "Home"] * (n_rows // 5),
-        "status": ["completed", "pending", "failed"] * (n_rows // 3),
-        "payment_method": ["card", "cash", "check", "transfer"] * (n_rows // 4),
+        "region": [regions[i % len(regions)] for i in range(n_rows)],
+        "category": [categories[i % len(categories)] for i in range(n_rows)],
+        "status": [statuses[i % len(statuses)] for i in range(n_rows)],
+        "payment_method": [payment_methods[i % len(payment_methods)] for i in range(n_rows)],
         "discount": [(i % 10) * 0.05 for i in range(n_rows)],
     })
 
     # Customer master data
+    segments = ["Premium", "Gold", "Silver", "Bronze"]
     customers = pl.DataFrame({
         "customer_id": [f"CUST_{i}" for i in range(5000)],
         "customer_name": [f"Customer_{i}" for i in range(5000)],
@@ -61,7 +67,7 @@ def large_dataset() -> "Tuple[pl.DataFrame, pl.DataFrame, pl.DataFrame]":
             for i in range(5000)
         ],
         "lifetime_value": [1000 + (i * 1.5) for i in range(5000)],
-        "segment": ["Premium", "Gold", "Silver", "Bronze"] * (5000 // 4),
+        "segment": [segments[i % len(segments)] for i in range(5000)],
     })
 
     # Product catalog
