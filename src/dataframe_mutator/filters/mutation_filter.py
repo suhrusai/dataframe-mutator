@@ -49,20 +49,21 @@ class PolarsMutationFilter:
 
         # Skip column name mutations (always fail)
         if self.skip_column_names and self._is_column_name_mutation(original, mutated):
-            logger.debug("Skipping column name mutation")
+            logger.debug(f"Skipping column name mutation: {original[:50]} → {mutated[:50]}")
             return False
 
         # Skip string literal mutations (usually low-value)
         if self.skip_string_literals and self._is_string_literal_mutation(original, mutated):
-            logger.debug("Skipping string literal mutation")
+            logger.debug(f"Skipping string literal mutation: {original[:50]} → {mutated[:50]}")
             return False
 
         # Skip syntax-only changes
         if self.skip_syntax_only and self._is_syntax_only_change(original, mutated):
-            logger.debug("Skipping syntax-only change")
+            logger.debug(f"Skipping syntax-only change: {original[:50]} → {mutated[:50]}")
             return False
 
         # All checks passed - worth testing
+        logger.debug(f"Keeping mutation: {original[:50]} → {mutated[:50]}")
         return True
 
     @staticmethod
@@ -74,15 +75,18 @@ class PolarsMutationFilter:
             mutated: Mutated code
 
         Returns:
-            True if only column names changed
+            True if ONLY column names changed (and nothing else)
         """
-        # Extract quoted strings (column names)
-        col_pattern = r'["\']([^"\']+)["\']'
-        orig_cols = set(re.findall(col_pattern, original))
-        mut_cols = set(re.findall(col_pattern, mutated))
+        # Remove all quoted strings from both versions
+        col_pattern = r'["\'][^"\']*["\']'
 
-        # If different columns, it's a column name mutation
-        return orig_cols != mut_cols
+        # Replace all quoted strings with a placeholder
+        orig_no_strings = re.sub(col_pattern, "QUOTED", original)
+        mut_no_strings = re.sub(col_pattern, "QUOTED", mutated)
+
+        # If the code is identical after removing strings, then ONLY strings changed
+        # This means it's a column name or string literal mutation (which we skip)
+        return orig_no_strings == mut_no_strings
 
     @staticmethod
     def _is_string_literal_mutation(original: str, mutated: str) -> bool:
