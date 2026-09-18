@@ -48,7 +48,8 @@ jobs:
           python -m pytest tests/ -v --tb=short 2>&1 | head -30
 
           START=$(date +%s%N)
-          mutmut run src/ --tests-dir tests/ --no-progress > /tmp/vanilla_${{ matrix.run }}.log 2>&1 || true
+          python -m pytest tests/ -q > /dev/null 2>&1
+          mutmut run --no-progress > /tmp/vanilla_${{ matrix.run }}.log 2>&1 || true
           END=$(date +%s%N)
 
           echo "Mutmut output:"
@@ -118,7 +119,8 @@ jobs:
           echo "[Run ${{ matrix.run }}/10] Starting plugin mutmut benchmark..."
 
           START=$(date +%s%N)
-          mutmut run src/ --tests-dir tests/ --no-progress > /tmp/plugin_${{ matrix.run }}.log 2>&1 || true
+          python -m pytest tests/ -q > /dev/null 2>&1
+          mutmut run --no-progress > /tmp/plugin_${{ matrix.run }}.log 2>&1 || true
           END=$(date +%s%N)
 
           echo "Mutmut output:"
