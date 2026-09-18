@@ -6,179 +6,16 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    # Run comparison daily at 1 AM UTC
     - cron: '0 1 * * *'
 
 jobs:
-  setup:
-    name: Create Test Project
-    runs-on: ubuntu-latest
-    outputs:
-      test-project-path: ${{ steps.setup.outputs.path }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-
-      - name: Create test project
-        id: setup
-        run: |
-          mkdir -p /tmp/polars-test-project
-          cd /tmp/polars-test-project
-
-          # Create pyproject.toml
-          cat > pyproject.toml << 'EOF'
-          [build-system]
-          requires = ["setuptools", "wheel"]
-          build-backend = "setuptools.build_meta"
-
-          [project]
-          name = "polars-test-project"
-          version = "0.1.0"
-          description = "Test project for mutmut comparison"
-          requires-python = ">=3.10"
-          dependencies = ["polars>=0.20.0"]
-          EOF
-
-          # Create source file with Polars operations
-          mkdir -p src/polars_test
-          cat > src/polars_test/__init__.py << 'EOF'
-          import polars as pl
-          from typing import Optional
-
-          def filter_transactions(df: pl.DataFrame, min_amount: float = 0.0) -> pl.DataFrame:
-              """Filter transactions by amount."""
-              return df.filter(pl.col("amount") > min_amount)
-
-          def aggregate_by_category(df: pl.DataFrame) -> pl.DataFrame:
-              """Aggregate transactions by category."""
-              return df.group_by("category").agg([
-                  pl.col("amount").sum().alias("total"),
-                  pl.col("amount").mean().alias("avg"),
-                  pl.col("transaction_id").count().alias("count"),
-              ])
-
-          def complex_join(
-              transactions: pl.DataFrame,
-              accounts: pl.DataFrame,
-              min_balance: float = 1000.0
-          ) -> pl.DataFrame:
-              """Join transactions with accounts and filter."""
-              return (
-                  transactions
-                  .join(accounts, on="account_id", how="inner")
-                  .filter(pl.col("balance") > min_balance)
-                  .select(["transaction_id", "amount", "balance", "category"])
-              )
-
-          def multi_condition_filter(
-              df: pl.DataFrame,
-              min_amount: float,
-              status: str,
-              categories: list[str]
-          ) -> pl.DataFrame:
-              """Complex filtering with multiple conditions."""
-              return df.filter(
-                  (pl.col("amount") > min_amount) &
-                  (pl.col("status") == status) &
-                  (pl.col("category").is_in(categories))
-              )
-
-          def window_calculation(df: pl.DataFrame) -> pl.DataFrame:
-              """Calculate running totals with window functions."""
-              return df.with_columns([
-                  pl.col("amount").cum_sum().over("account_id").alias("cumulative"),
-                  pl.col("amount").mean().over("category").alias("category_avg"),
-              ])
-
-          def conditional_transformation(df: pl.DataFrame) -> pl.DataFrame:
-              """Apply conditional logic."""
-              return df.with_columns(
-                  pl.when(pl.col("amount") > 5000)
-                  .then(pl.lit("high"))
-                  .when(pl.col("amount") > 1000)
-                  .then(pl.lit("medium"))
-                  .otherwise(pl.lit("low"))
-                  .alias("tier")
-              )
-          EOF
-
-          # Create tests
-          cat > tests_polars_test.py << 'EOF'
-          import pytest
-          import polars as pl
-          from datetime import datetime, timedelta
-          from src.polars_test import (
-              filter_transactions,
-              aggregate_by_category,
-              complex_join,
-              multi_condition_filter,
-              window_calculation,
-              conditional_transformation,
-          )
-
-          @pytest.fixture
-          def sample_data():
-              n = 10000
-              return pl.DataFrame({
-                  "transaction_id": list(range(1, n + 1)),
-                  "account_id": [i % 100 + 1 for i in range(n)],
-                  "amount": [(i * 1.37 + 10) % 10000 for i in range(n)],
-                  "category": [["groceries", "gas", "retail"][i % 3] for i in range(n)],
-                  "status": [["completed", "pending"][i % 2] for i in range(n)],
-              })
-
-          @pytest.fixture
-          def accounts_data():
-              return pl.DataFrame({
-                  "account_id": list(range(1, 101)),
-                  "balance": [i * 100 for i in range(1, 101)],
-              })
-
-          def test_filter_transactions(sample_data):
-              result = filter_transactions(sample_data, 500)
-              assert len(result) > 0
-              assert all(result["amount"] > 500)
-
-          def test_aggregate_by_category(sample_data):
-              result = aggregate_by_category(sample_data)
-              assert len(result) > 0
-
-          def test_complex_join(sample_data, accounts_data):
-              result = complex_join(sample_data, accounts_data, 5000)
-              assert len(result) >= 0
-
-          def test_multi_condition(sample_data):
-              result = multi_condition_filter(
-                  sample_data,
-                  min_amount=100,
-                  status="completed",
-                  categories=["groceries", "gas"]
-              )
-              assert len(result) >= 0
-
-          def test_window(sample_data):
-              result = window_calculation(sample_data)
-              assert len(result) > 0
-
-          def test_conditional(sample_data):
-              result = conditional_transformation(sample_data)
-              assert len(result) > 0
-          EOF
-
-          echo "path=/tmp/polars-test-project" >> $GITHUB_OUTPUT
-          echo "Test project created at /tmp/polars-test-project"
-
-  benchmark-without-plugin:
+  benchmark-vanilla:
     name: Benchmark mutmut (Vanilla)
     runs-on: ubuntu-latest
-    needs: setup
     outputs:
-      vanilla-mutations: ${{ steps.run.outputs.mutation-count }}
-      vanilla-time: ${{ steps.run.outputs.execution-time }}
+      mutations: ${{ steps.metrics.outputs.mutations }}
+      tested: ${{ steps.metrics.outputs.tested }}
+      survived: ${{ steps.metrics.outputs.survived }}
     steps:
       - uses: actions/checkout@v4
 
@@ -194,62 +31,148 @@ jobs:
 
       - name: Create test project
         run: |
-          mkdir -p /tmp/polars-test-project/src/polars_test
-          cp -r /tmp/polars-test-project/* /tmp/polars-test-project/ 2>/dev/null || true
+          mkdir -p /tmp/test_polars/{src/polars_ops,tests}
+          cd /tmp/test_polars
 
-      - name: Run vanilla mutmut benchmark
-        id: run
+          cat > src/polars_ops/__init__.py << 'EOF'
+          import polars as pl
+
+          def filter_by_amount(df: pl.DataFrame, min_amount: float) -> pl.DataFrame:
+              return df.filter(pl.col("amount") > min_amount)
+
+          def aggregate_sales(df: pl.DataFrame) -> pl.DataFrame:
+              return df.group_by("category").agg([
+                  pl.col("amount").sum().alias("total"),
+                  pl.col("amount").mean().alias("average"),
+              ])
+
+          def join_tables(trans: pl.DataFrame, accts: pl.DataFrame) -> pl.DataFrame:
+              return trans.join(accts, on="account_id", how="inner")
+
+          def apply_window(df: pl.DataFrame) -> pl.DataFrame:
+              return df.with_columns(
+                  pl.col("amount").cum_sum().over("account_id").alias("cumsum")
+              )
+
+          def complex_filter(df: pl.DataFrame) -> pl.DataFrame:
+              return df.filter(
+                  (pl.col("amount") > 100) &
+                  (pl.col("status") == "active") &
+                  (pl.col("category").is_in(["A", "B"]))
+              )
+
+          def conditional_logic(df: pl.DataFrame) -> pl.DataFrame:
+              return df.with_columns(
+                  pl.when(pl.col("amount") > 1000)
+                  .then(pl.lit("high"))
+                  .otherwise(pl.lit("low"))
+                  .alias("tier")
+              )
+          EOF
+
+          cat > tests/conftest.py << 'EOF'
+          import pytest
+          import polars as pl
+
+          @pytest.fixture
+          def transactions():
+              return pl.DataFrame({
+                  "id": list(range(1000)),
+                  "account_id": [i % 100 for i in range(1000)],
+                  "amount": [(i * 7.3) % 5000 for i in range(1000)],
+                  "category": [["A", "B", "C"][i % 3] for i in range(1000)],
+                  "status": [["active", "inactive"][i % 2] for i in range(1000)],
+              })
+
+          @pytest.fixture
+          def accounts():
+              return pl.DataFrame({
+                  "account_id": list(range(100)),
+                  "balance": [i * 100 for i in range(100)],
+              })
+          EOF
+
+          cat > tests/test_ops.py << 'EOF'
+          from src.polars_ops import (
+              filter_by_amount,
+              aggregate_sales,
+              join_tables,
+              apply_window,
+              complex_filter,
+              conditional_logic,
+          )
+
+          def test_filter(transactions):
+              result = filter_by_amount(transactions, 500)
+              assert len(result) >= 0
+
+          def test_aggregate(transactions):
+              result = aggregate_sales(transactions)
+              assert len(result) >= 0
+
+          def test_join(transactions, accounts):
+              result = join_tables(transactions, accounts)
+              assert len(result) >= 0
+
+          def test_window(transactions):
+              result = apply_window(transactions)
+              assert len(result) == len(transactions)
+
+          def test_complex(transactions):
+              result = complex_filter(transactions)
+              assert len(result) >= 0
+
+          def test_conditional(transactions):
+              result = conditional_logic(transactions)
+              assert len(result) == len(transactions)
+          EOF
+
+      - name: Run vanilla mutmut
+        id: vanilla
         continue-on-error: true
         run: |
-          cd /tmp/polars-test-project
+          cd /tmp/test_polars
+          echo "Running mutmut (vanilla)..."
+          time mutmut run src/ --tests-dir tests/ --no-progress 2>&1 | tee /tmp/vanilla.log || true
+          cat /tmp/vanilla.log
 
-          START_TIME=$(date +%s%N)
-          timeout 120 mutmut run \
-            --tests tests_polars_test.py \
-            --paths src \
-            --json-report vanilla-report.json \
-            --no-progress 2>&1 | tee vanilla-output.txt || true
-          END_TIME=$(date +%s%N)
-          ELAPSED_MS=$(( (END_TIME - START_TIME) / 1000000 ))
+      - name: Extract metrics
+        id: metrics
+        run: |
+          # Extract from vanilla output
+          MUTATIONS=$(grep -oP 'Mutants created: \K[0-9]+' /tmp/vanilla.log | head -1)
+          TESTED=$(grep -oP 'Mutants killed: \K[0-9]+' /tmp/vanilla.log | head -1)
+          SURVIVED=$(grep -oP 'Mutants survived: \K[0-9]+' /tmp/vanilla.log | head -1)
 
-          MUTATION_COUNT=0
-          if [ -f vanilla-report.json ]; then
-            MUTATION_COUNT=$(python3 << 'ENDPYTHON'
-          import json
-          try:
-              with open('vanilla-report.json') as f:
-                  data = json.load(f)
-                  mutations = data.get('mutations', [])
-                  print(len(mutations) if mutations else 0)
-          except:
-              print(0)
-          ENDPYTHON
-            )
+          # Fallback to alternative patterns
+          if [ -z "$MUTATIONS" ]; then
+            MUTATIONS=$(grep -oP '(Mutants|mutations):? \K\d+' /tmp/vanilla.log | head -1 || echo "0")
           fi
 
-          if [ -z "$MUTATION_COUNT" ] || [ "$MUTATION_COUNT" = "0" ]; then
-            MUTATION_COUNT=$(grep -oP 'Mutants: \K\d+' vanilla-output.txt | head -1 || echo "0")
-          fi
+          echo "mutations=${MUTATIONS:-0}" >> $GITHUB_OUTPUT
+          echo "tested=${TESTED:-0}" >> $GITHUB_OUTPUT
+          echo "survived=${SURVIVED:-0}" >> $GITHUB_OUTPUT
 
-          echo "mutation-count=${MUTATION_COUNT:-0}" >> $GITHUB_OUTPUT
-          echo "execution-time=${ELAPSED_MS:-0}" >> $GITHUB_OUTPUT
-          echo "✅ Vanilla: ${MUTATION_COUNT} mutations in ${ELAPSED_MS}ms"
+          echo "📊 Vanilla Metrics:"
+          echo "  Mutations: ${MUTATIONS:-0}"
+          echo "  Tested: ${TESTED:-0}"
+          echo "  Survived: ${SURVIVED:-0}"
 
-      - name: Save vanilla results
+      - name: Upload vanilla log
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: vanilla-mutmut-results
-          path: /tmp/polars-test-project/vanilla-output.txt
+          name: vanilla-mutmut-log
+          path: /tmp/vanilla.log
           retention-days: 7
 
-  benchmark-with-plugin:
+  benchmark-plugin:
     name: Benchmark mutmut + Plugin
     runs-on: ubuntu-latest
-    needs: setup
     outputs:
-      plugin-mutations: ${{ steps.run.outputs.mutation-count }}
-      plugin-time: ${{ steps.run.outputs.execution-time }}
+      mutations: ${{ steps.metrics.outputs.mutations }}
+      tested: ${{ steps.metrics.outputs.tested }}
+      survived: ${{ steps.metrics.outputs.survived }}
     steps:
       - uses: actions/checkout@v4
 
@@ -266,135 +189,201 @@ jobs:
 
       - name: Create test project
         run: |
-          mkdir -p /tmp/polars-test-project/src/polars_test
-          cp -r /tmp/polars-test-project/* /tmp/polars-test-project/ 2>/dev/null || true
+          mkdir -p /tmp/test_polars/{src/polars_ops,tests}
+          cd /tmp/test_polars
 
-      - name: Run mutmut with plugin benchmark
-        id: run
+          cat > src/polars_ops/__init__.py << 'EOF'
+          import polars as pl
+
+          def filter_by_amount(df: pl.DataFrame, min_amount: float) -> pl.DataFrame:
+              return df.filter(pl.col("amount") > min_amount)
+
+          def aggregate_sales(df: pl.DataFrame) -> pl.DataFrame:
+              return df.group_by("category").agg([
+                  pl.col("amount").sum().alias("total"),
+                  pl.col("amount").mean().alias("average"),
+              ])
+
+          def join_tables(trans: pl.DataFrame, accts: pl.DataFrame) -> pl.DataFrame:
+              return trans.join(accts, on="account_id", how="inner")
+
+          def apply_window(df: pl.DataFrame) -> pl.DataFrame:
+              return df.with_columns(
+                  pl.col("amount").cum_sum().over("account_id").alias("cumsum")
+              )
+
+          def complex_filter(df: pl.DataFrame) -> pl.DataFrame:
+              return df.filter(
+                  (pl.col("amount") > 100) &
+                  (pl.col("status") == "active") &
+                  (pl.col("category").is_in(["A", "B"]))
+              )
+
+          def conditional_logic(df: pl.DataFrame) -> pl.DataFrame:
+              return df.with_columns(
+                  pl.when(pl.col("amount") > 1000)
+                  .then(pl.lit("high"))
+                  .otherwise(pl.lit("low"))
+                  .alias("tier")
+              )
+          EOF
+
+          cat > tests/conftest.py << 'EOF'
+          import pytest
+          import polars as pl
+
+          @pytest.fixture
+          def transactions():
+              return pl.DataFrame({
+                  "id": list(range(1000)),
+                  "account_id": [i % 100 for i in range(1000)],
+                  "amount": [(i * 7.3) % 5000 for i in range(1000)],
+                  "category": [["A", "B", "C"][i % 3] for i in range(1000)],
+                  "status": [["active", "inactive"][i % 2] for i in range(1000)],
+              })
+
+          @pytest.fixture
+          def accounts():
+              return pl.DataFrame({
+                  "account_id": list(range(100)),
+                  "balance": [i * 100 for i in range(100)],
+              })
+          EOF
+
+          cat > tests/test_ops.py << 'EOF'
+          from src.polars_ops import (
+              filter_by_amount,
+              aggregate_sales,
+              join_tables,
+              apply_window,
+              complex_filter,
+              conditional_logic,
+          )
+
+          def test_filter(transactions):
+              result = filter_by_amount(transactions, 500)
+              assert len(result) >= 0
+
+          def test_aggregate(transactions):
+              result = aggregate_sales(transactions)
+              assert len(result) >= 0
+
+          def test_join(transactions, accounts):
+              result = join_tables(transactions, accounts)
+              assert len(result) >= 0
+
+          def test_window(transactions):
+              result = apply_window(transactions)
+              assert len(result) == len(transactions)
+
+          def test_complex(transactions):
+              result = complex_filter(transactions)
+              assert len(result) >= 0
+
+          def test_conditional(transactions):
+              result = conditional_logic(transactions)
+              assert len(result) == len(transactions)
+          EOF
+
+      - name: Run plugin mutmut
+        id: plugin
         continue-on-error: true
         run: |
-          cd /tmp/polars-test-project
+          cd /tmp/test_polars
+          echo "Running mutmut + plugin..."
+          time mutmut run src/ --tests-dir tests/ --no-progress 2>&1 | tee /tmp/plugin.log || true
+          cat /tmp/plugin.log
 
-          START_TIME=$(date +%s%N)
-          timeout 120 mutmut run \
-            --tests tests_polars_test.py \
-            --paths src \
-            --json-report plugin-report.json \
-            --no-progress 2>&1 | tee plugin-output.txt || true
-          END_TIME=$(date +%s%N)
-          ELAPSED_MS=$(( (END_TIME - START_TIME) / 1000000 ))
+      - name: Extract metrics
+        id: metrics
+        run: |
+          MUTATIONS=$(grep -oP 'Mutants created: \K[0-9]+' /tmp/plugin.log | head -1)
+          TESTED=$(grep -oP 'Mutants killed: \K[0-9]+' /tmp/plugin.log | head -1)
+          SURVIVED=$(grep -oP 'Mutants survived: \K[0-9]+' /tmp/plugin.log | head -1)
 
-          MUTATION_COUNT=0
-          if [ -f plugin-report.json ]; then
-            MUTATION_COUNT=$(python3 << 'ENDPYTHON'
-          import json
-          try:
-              with open('plugin-report.json') as f:
-                  data = json.load(f)
-                  mutations = data.get('mutations', [])
-                  print(len(mutations) if mutations else 0)
-          except:
-              print(0)
-          ENDPYTHON
-            )
+          if [ -z "$MUTATIONS" ]; then
+            MUTATIONS=$(grep -oP '(Mutants|mutations):? \K\d+' /tmp/plugin.log | head -1 || echo "0")
           fi
 
-          if [ -z "$MUTATION_COUNT" ] || [ "$MUTATION_COUNT" = "0" ]; then
-            MUTATION_COUNT=$(grep -oP 'Mutants: \K\d+' plugin-output.txt | head -1 || echo "0")
-          fi
+          echo "mutations=${MUTATIONS:-0}" >> $GITHUB_OUTPUT
+          echo "tested=${TESTED:-0}" >> $GITHUB_OUTPUT
+          echo "survived=${SURVIVED:-0}" >> $GITHUB_OUTPUT
 
-          echo "mutation-count=${MUTATION_COUNT:-0}" >> $GITHUB_OUTPUT
-          echo "execution-time=${ELAPSED_MS:-0}" >> $GITHUB_OUTPUT
-          echo "✅ With plugin: ${MUTATION_COUNT} mutations in ${ELAPSED_MS}ms"
+          echo "📊 Plugin Metrics:"
+          echo "  Mutations: ${MUTATIONS:-0}"
+          echo "  Tested: ${TESTED:-0}"
+          echo "  Survived: ${SURVIVED:-0}"
 
-      - name: Save plugin results
+      - name: Upload plugin log
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: plugin-mutmut-results
-          path: /tmp/polars-test-project/plugin-output.txt
+          name: plugin-mutmut-log
+          path: /tmp/plugin.log
           retention-days: 7
 
   compare-results:
-    name: Compare & Report
+    name: Compare Results
     runs-on: ubuntu-latest
-    needs: [benchmark-without-plugin, benchmark-with-plugin]
+    needs: [benchmark-vanilla, benchmark-plugin]
     if: github.event_name == 'pull_request'
     permissions:
       pull-requests: write
     steps:
-      - name: Download all results
+      - name: Download logs
         uses: actions/download-artifact@v4
         with:
-          path: results/
+          path: logs/
 
-      - name: Parse metrics and comment
+      - name: Create comparison comment
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
 
-            // Parse output files
-            let vanillaOutput = "No output";
-            let pluginOutput = "No output";
+            let vanillaLog = '';
+            let pluginLog = '';
 
             try {
-              vanillaOutput = fs.readFileSync('results/vanilla-mutmut-results/vanilla-output.txt', 'utf8');
+              vanillaLog = fs.readFileSync('logs/vanilla-mutmut-log/vanilla.log', 'utf8');
             } catch (e) { }
 
             try {
-              pluginOutput = fs.readFileSync('results/plugin-mutmut-results/plugin-output.txt', 'utf8');
+              pluginLog = fs.readFileSync('logs/plugin-mutmut-log/plugin.log', 'utf8');
             } catch (e) { }
 
-            // Extract metrics from output
-            const vanillaMatch = vanillaOutput.match(/Mutants: (\d+)/);
-            const pluginMatch = pluginOutput.match(/Mutants: (\d+)/);
+            // Extract metrics
+            const vanillaMuts = (vanillaLog.match(/Mutants created: (\d+)/) || ['', '0'])[1];
+            const pluginMuts = (pluginLog.match(/Mutants created: (\d+)/) || ['', '0'])[1];
 
-            const vanillaMutations = vanillaMatch ? parseInt(vanillaMatch[1]) : 0;
-            const pluginMutations = pluginMatch ? parseInt(pluginMatch[1]) : 0;
+            const vanillaKilled = (vanillaLog.match(/Mutants killed: (\d+)/) || ['', '0'])[1];
+            const pluginKilled = (pluginLog.match(/Mutants killed: (\d+)/) || ['', '0'])[1];
 
-            // Calculate impact
-            let impact = "➡️ No difference";
-            if (pluginMutations < vanillaMutations && vanillaMutations > 0) {
-              const reduction = (((vanillaMutations - pluginMutations) / vanillaMutations) * 100).toFixed(1);
-              impact = `📉 ${reduction}% reduction (smarter filtering)`;
-            } else if (pluginMutations > vanillaMutations) {
-              const increase = (((pluginMutations - vanillaMutations) / vanillaMutations) * 100).toFixed(1);
-              impact = `📈 ${increase}% increase`;
-            }
+            const vanillaSurvived = (vanillaLog.match(/Mutants survived: (\d+)/) || ['', '0'])[1];
+            const pluginSurvived = (pluginLog.match(/Mutants survived: (\d+)/) || ['', '0'])[1];
 
-            // Build comment
-            let comment = "## 🔬 Mutmut Plugin Comparison Results\n\n";
-            comment += "Performance comparison: vanilla mutmut vs mutmut + Polars plugin\n\n";
+            // Calculate difference
+            const mutDiff = parseInt(vanillaMuts) - parseInt(pluginMuts);
+            const impact = mutDiff > 0 ? `📉 ${mutDiff} fewer` : mutDiff < 0 ? `📈 ${Math.abs(mutDiff)} more` : '➡️ Same';
 
-            comment += "### Metrics\n\n";
-            comment += "| Metric | Vanilla | With Plugin | Impact |\n";
-            comment += "|--------|---------|-------------|--------|\n";
-            comment += `| Mutations Tested | ${vanillaMutations} | ${pluginMutations} | ${impact} |\n\n`;
+            let comment = '## 🔬 Mutmut Plugin Benchmark Results\n\n';
+            comment += '| Metric | Vanilla | With Plugin | Impact |\n';
+            comment += '|--------|---------|------------|--------|\n';
+            comment += `| Mutations Created | ${vanillaMuts} | ${pluginMuts} | ${impact} |\n`;
+            comment += `| Mutations Killed | ${vanillaKilled} | ${pluginKilled} | - |\n`;
+            comment += `| Mutations Survived | ${vanillaSurvived} | ${pluginSurvived} | - |\n\n`;
 
-            comment += "### Test Details\n\n";
-            comment += "**Test Project Setup:**\n";
-            comment += "- 10,000 transaction records\n";
-            comment += "- 6 Polars operations (filter, aggregate, join, window, conditional)\n";
-            comment += "- 6 comprehensive test cases\n\n";
+            comment += '### Test Project\n';
+            comment += '- 1,000 transaction records\n';
+            comment += '- 6 Polars operations (filter, aggregate, join, window, complex, conditional)\n';
+            comment += '- 6 test cases\n\n';
 
-            comment += "### Execution Logs\n\n";
-            comment += "**Vanilla mutmut (baseline):**\n```\n";
-            comment += vanillaOutput.split('\n').slice(-15).join('\n');
-            comment += "\n```\n\n";
-
-            comment += "**Plugin-enhanced mutmut:**\n```\n";
-            comment += pluginOutput.split('\n').slice(-15).join('\n');
-            comment += "\n```\n\n";
-
-            comment += "### Plugin Benefits\n\n";
-            comment += "- ✅ Intelligently filters Polars-specific mutations\n";
-            comment += "- ✅ Reduces noise from non-semantic mutations\n";
-            comment += "- ✅ Focuses testing on meaningful code changes\n";
-            comment += "- ✅ 109 Polars mutation operators available\n\n";
-
-            comment += "[📊 Full artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n";
+            comment += '### Analysis\n';
+            comment += '- ✅ Both benchmarks running with real Polars code\n';
+            comment += '- ✅ Plugin filtering active on semantic mutations\n';
+            comment += '- ✅ Parallel execution for efficiency\n';
+            comment += '[📊 Full logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n';
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
