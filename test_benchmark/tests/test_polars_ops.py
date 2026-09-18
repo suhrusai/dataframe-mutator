@@ -2,7 +2,7 @@
 
 import pytest
 import polars as pl
-from src.polars_code import (
+from polars_code import (
     filter_by_amount,
     aggregate_by_category,
     join_with_accounts,
