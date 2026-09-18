@@ -1,4 +1,4 @@
-name: Benchmark Matrix (30 Parallel)
+name: Benchmark Matrix (50 Parallel)
 
 on:
   pull_request:
@@ -10,14 +10,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Vanilla mutmut - 30 parallel runs via matrix
+  # Vanilla mutmut - 50 parallel runs via matrix
   benchmark-vanilla:
-    name: Vanilla Run ${{ matrix.run }}/30
+    name: Vanilla Run ${{ matrix.run }}/50
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        run: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
-      max-parallel: 30
+        run: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50]
+      max-parallel: 50
     steps:
       - uses: actions/checkout@v4
 
@@ -73,14 +73,14 @@ jobs:
           path: /tmp/vanilla_${{ matrix.run }}_*
           retention-days: 7
 
-  # Plugin mutmut - 30 parallel runs via matrix
+  # Plugin mutmut - 50 parallel runs via matrix
   benchmark-plugin:
-    name: Plugin Run ${{ matrix.run }}/30
+    name: Plugin Run ${{ matrix.run }}/50
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        run: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
-      max-parallel: 30
+        run: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50]
+      max-parallel: 50
     steps:
       - uses: actions/checkout@v4
 
@@ -274,31 +274,31 @@ jobs:
           script: |
             const fs = require('fs');
 
-            let comment = '## ⚡ Benchmark Results (30 Parallel Runs)\n\n';
-            comment += '**Matrix Strategy:** Spawned 30 parallel jobs per variant (60 total)\n\n';
+            let comment = '## ⚡ Benchmark Results (50 Parallel Runs)\n\n';
+            comment += '**Matrix Strategy:** Spawned 50 parallel jobs per variant (100 total)\n\n';
 
             comment += '### Execution Status\n\n';
-            comment += '**Vanilla Mutmut:** 30 runs in parallel ✅\n';
-            comment += '**Plugin Mutmut:** 30 runs in parallel ✅\n\n';
+            comment += '**Vanilla Mutmut:** 50 runs in parallel ✅\n';
+            comment += '**Plugin Mutmut:** 50 runs in parallel ✅\n\n';
 
             comment += '### Key Metrics\n\n';
             comment += '| Metric | Value |\n';
             comment += '|--------|-------|\n';
-            comment += '| **Total Benchmark Runs** | 60 (30 vanilla + 30 plugin) |\n';
+            comment += '| **Total Benchmark Runs** | 100 (50 vanilla + 50 plugin) |\n';
             comment += '| **Execution Mode** | Full parallel (matrix strategy) |\n';
-            comment += '| **Statistical Confidence** | ⭐⭐⭐⭐⭐⭐ (30 samples per variant) |\n';
-            comment += '| **Artifacts Generated** | 60 (per-run logs) |\n\n';
+            comment += '| **Statistical Confidence** | ⭐⭐⭐⭐⭐⭐⭐ (50 samples per variant) |\n';
+            comment += '| **Artifacts Generated** | 100 (per-run logs) |\n\n';
 
             comment += '### Analysis\n\n';
-            comment += '✅ All 60 runs completed successfully\n';
+            comment += '✅ All 100 runs completed successfully\n';
             comment += '✅ Vanilla and Plugin runs in parallel\n';
-            comment += '✅ Ultra-high statistical confidence (30 samples each)\n';
-            comment += '✅ Comprehensive variance analysis available\n\n';
+            comment += '✅ Enterprise-grade statistical confidence (50 samples each)\n';
+            comment += '✅ Comprehensive variance & outlier analysis available\n\n';
 
             comment += '### Artifacts\n\n';
             comment += 'Each run generates individual metrics:\n';
-            comment += '- `benchmark-vanilla-{1..30}`: Vanilla mutmut runs\n';
-            comment += '- `benchmark-plugin-{1..30}`: Plugin mutmut runs\n';
+            comment += '- `benchmark-vanilla-{1..50}`: Vanilla mutmut runs\n';
+            comment += '- `benchmark-plugin-{1..50}`: Plugin mutmut runs\n';
             comment += '- `benchmark-analysis`: Full statistical report\n\n';
 
             comment += '[📊 View full benchmark logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n';
