@@ -2,6 +2,21 @@
 
 **v2.0.0 includes industry-standard benchmarks. Measure real speedups on your code.**
 
+## Automatic CI/CD Benchmarks
+
+Every PR automatically runs benchmarks and posts results as comments:
+
+### Mutmut Plugin Comparison
+- **Runs on**: Every PR push
+- **Infrastructure**: Linux (ubuntu-latest)
+- **What it measures**: 
+  - Mutations created (vanilla vs plugin)
+  - Filtering efficiency (% reduction)
+  - Execution metrics
+- **Result**: PR comment with side-by-side comparison table
+
+See [`test_benchmark/`](test_benchmark/) for the test project and [`.github/workflows/mutmut-comparison.yml`](.github/workflows/mutmut-comparison.yml) for workflow details.
+
 ## Recommended: TPC-H Benchmark
 
 The **TPC-H (Transaction Processing Performance Council) benchmark** is the industry standard used by Polars, PostgreSQL, and DuckDB for performance testing.
@@ -15,9 +30,11 @@ pip install mutmut polars pytest
 cd benchmarks/
 pytest test_tpch_inspired_workload.py -v
 
-# Time the mutation testing
+# Time the mutation testing (requires Linux/WSL)
 time mutmut run --paths ../src/dataframe_mutator/ --tests-dir ../tests/
 ```
+
+⚠️ **Note**: `mutmut` requires Linux/WSL. Windows native is not supported. See [issue #397](https://github.com/boxed/mutmut/issues/397).
 
 See [TPCH_BENCHMARK_README.md](TPCH_BENCHMARK_README.md) for complete TPC-H documentation.
 

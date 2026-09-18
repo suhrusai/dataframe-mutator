@@ -30,18 +30,26 @@ test_benchmark/
 
 ## Running Mutmut
 
-### Vanilla (no plugin):
+**⚠️ Note: mutmut requires Linux/WSL** - Windows native is not supported ([boxed/mutmut#397](https://github.com/boxed/mutmut/issues/397))
+
+### On WSL/Linux:
+
+**Vanilla (no plugin):**
 ```bash
 cd test_benchmark
 mutmut run src/ --tests-dir tests/ --no-progress
 ```
 
-### With Plugin:
+**With Plugin:**
 ```bash
 cd test_benchmark
 pip install -e ".."  # Install plugin from parent directory
 mutmut run src/ --tests-dir tests/ --no-progress
 ```
+
+### Running in CI/CD:
+
+Both vanilla and plugin benchmarks run automatically in GitHub Actions on `ubuntu-latest`. Check the workflow results in the PR for benchmark comparison metrics.
 
 ## Expected Metrics
 
