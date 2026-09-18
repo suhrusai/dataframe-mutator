@@ -1,4 +1,4 @@
-"""Benchmarking suite comparing mutmut vs dataframe-mutator."""
+"""Benchmarking suite comparing mutmut vs dataframe-mutator on NYC Taxi dataset."""
 
 import json
 import logging
@@ -22,23 +22,52 @@ class BenchmarkResult:
     mutations_killed: int
     score: float
     timestamp: str
+    dataset_size_mb: float = 0.0
 
     def to_dict(self):
         return asdict(self)
 
 
 class BenchmarkRunner:
-    """Run benchmarks comparing mutation testing tools."""
+    """Run benchmarks comparing mutation testing tools on NYC Taxi dataset."""
 
-    def __init__(self, test_dir: str = "examples/etl-pipeline"):
-        self.test_dir = Path(test_dir)
-        self.src_file = self.test_dir / "src" / "sales_etl.py"
-        self.test_command = f"pytest {self.test_dir}/tests/"
+    def __init__(self):
+        self.src_file = Path("benchmarks/nyc_taxi_etl.py")
+        self.test_command = "pytest benchmarks/test_nyc_taxi_etl.py -v"
         self.results = []
+        self.dataset_path = Path("benchmarks/data/yellow_tripdata_2024-01.parquet")
+
+    def download_dataset(self) -> bool:
+        """Download NYC Taxi dataset if not present."""
+        if self.dataset_path.exists():
+            logger.info(f"Dataset already exists: {self.dataset_path}")
+            return True
+
+        logger.info("Downloading NYC Taxi dataset (1GB+)...")
+        self.dataset_path.parent.mkdir(parents=True, exist_ok=True)
+
+        url = "https://d37ci6vzch7kqd.cloudfront.net/trip-data/yellow_tripdata_2024-01.parquet"
+        try:
+            import urllib.request
+            urllib.request.urlretrieve(url, str(self.dataset_path))
+            logger.info(f"Dataset downloaded: {self.dataset_path}")
+            size_mb = self.dataset_path.stat().st_size / (1024 * 1024)
+            logger.info(f"Dataset size: {size_mb:.1f} MB")
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to download dataset: {e}")
+            logger.info("Benchmark will use test data instead")
+            return False
+
+    def get_dataset_size_mb(self) -> float:
+        """Get dataset size in MB."""
+        if self.dataset_path.exists():
+            return self.dataset_path.stat().st_size / (1024 * 1024)
+        return 0.0
 
     def run_dataframe_mutator(self) -> BenchmarkResult:
-        """Benchmark dataframe-mutator."""
-        logger.info("Running dataframe-mutator...")
+        """Benchmark dataframe-mutator on NYC Taxi ETL."""
+        logger.info("Running dataframe-mutator on NYC Taxi ETL pipeline...")
 
         start = time.time()
 
@@ -53,6 +82,7 @@ class BenchmarkRunner:
             results = tester.analyze_mutation_efficiency(str(self.src_file))
 
             elapsed = time.time() - start
+            dataset_size = self.get_dataset_size_mb()
 
             result = BenchmarkResult(
                 tool="dataframe-mutator",
@@ -62,7 +92,8 @@ class BenchmarkRunner:
                 mutations_tested=results.get('high_value_mutations', 0),
                 mutations_killed=results.get('high_value_mutations', 0),
                 score=results.get('potential_false_positives_avoided', 0),
-                timestamp=datetime.now().isoformat()
+                timestamp=datetime.now().isoformat(),
+                dataset_size_mb=dataset_size
             )
 
             logger.info(
@@ -75,8 +106,8 @@ class BenchmarkRunner:
             return None
 
     def run_mutmut(self) -> BenchmarkResult:
-        """Benchmark vanilla mutmut."""
-        logger.info("Running mutmut...")
+        """Benchmark vanilla mutmut on NYC Taxi ETL."""
+        logger.info("Running mutmut on NYC Taxi ETL pipeline...")
 
         start = time.time()
 
@@ -85,7 +116,7 @@ class BenchmarkRunner:
                 "mutmut",
                 "run",
                 "--paths", str(self.src_file),
-                "--tests-dir", str(self.test_dir / "tests"),
+                "--tests-dir", "benchmarks/",
                 "--simple-output"
             ]
 
@@ -93,11 +124,12 @@ class BenchmarkRunner:
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=600,
-                cwd=str(self.test_dir.parent)
+                timeout=1200,  # 20 minutes for full dataset
+                cwd=str(Path.cwd())
             )
 
             elapsed = time.time() - start
+            dataset_size = self.get_dataset_size_mb()
 
             # Parse mutmut output for mutation count
             output = result.stdout + result.stderr
@@ -111,37 +143,46 @@ class BenchmarkRunner:
                 mutations_tested=mutations_tested,
                 mutations_killed=mutations_tested,
                 score=0.0,  # mutmut doesn't provide this metric
-                timestamp=datetime.now().isoformat()
+                timestamp=datetime.now().isoformat(),
+                dataset_size_mb=dataset_size
             )
 
             logger.info(f"mutmut: {elapsed:.2f}s, {mutations_tested} mutations")
             return benchmark_result
 
         except subprocess.TimeoutExpired:
-            logger.error("mutmut timed out after 600 seconds")
+            logger.error("mutmut timed out after 20 minutes")
             return None
         except Exception as e:
             logger.error(f"mutmut failed: {e}")
             return None
 
     def run_all(self) -> dict:
-        """Run all benchmarks."""
+        """Run all benchmarks on NYC Taxi dataset."""
         logger.info("=" * 70)
-        logger.info("MUTATION TESTING BENCHMARK SUITE")
+        logger.info("MUTATION TESTING BENCHMARK SUITE - NYC TAXI DATASET")
         logger.info("=" * 70)
-        logger.info(f"Test Directory: {self.test_dir}")
         logger.info(f"Source File: {self.src_file}")
         logger.info(f"Test Command: {self.test_command}")
+
+        # Download dataset
+        logger.info("\nPreparing dataset...")
+        self.download_dataset()
+        dataset_size = self.get_dataset_size_mb()
+        if dataset_size > 0:
+            logger.info(f"Dataset size: {dataset_size:.1f} MB")
 
         results = {}
 
         # Run dataframe-mutator
+        logger.info("\n" + "-" * 70)
         dm_result = self.run_dataframe_mutator()
         if dm_result:
             results['dataframe_mutator'] = dm_result
             self.results.append(dm_result)
 
         # Run mutmut
+        logger.info("\n" + "-" * 70)
         mutmut_result = self.run_mutmut()
         if mutmut_result:
             results['mutmut'] = mutmut_result
@@ -154,37 +195,46 @@ class BenchmarkRunner:
         return results
 
     def _print_comparison(self):
-        """Log benchmark comparison."""
+        """Log benchmark comparison on NYC Taxi dataset."""
         dm = self.results[0]
         mutmut = self.results[1]
 
         logger.info("=" * 70)
-        logger.info("BENCHMARK RESULTS")
+        logger.info("BENCHMARK RESULTS - NYC TAXI DATASET")
         logger.info("=" * 70)
 
-        logger.info(
-            f"{'Metric':<30} {'dataframe-mutator':<20} {'mutmut':<20}"
-        )
+        dataset_size = dm.dataset_size_mb or 0.0
+        if dataset_size > 0:
+            logger.info(f"Dataset Size: {dataset_size:.1f} MB")
+        logger.info("Pipeline: NYC Taxi ETL (40+ operations)")
+        logger.info(f"Tests: {dm.test_command}")
         logger.info("-" * 70)
+
         logger.info(
-            f"{'Execution Time':<30} {dm.execution_time:>18.2f}s "
+            f"{'Metric':<35} {'dataframe-mutator':<20} {'mutmut':<20}"
+        )
+        logger.info("-" * 75)
+        logger.info(
+            f"{'Execution Time':<35} {dm.execution_time:>18.2f}s "
             f"{mutmut.execution_time:>18.2f}s"
         )
         logger.info(
-            f"{'Mutations Tested':<30} {dm.mutations_tested:>18d} "
+            f"{'Mutations Tested':<35} {dm.mutations_tested:>18d} "
             f"{mutmut.mutations_tested:>18d}"
         )
         logger.info(
-            f"{'False Positives Avoided':<30} {dm.score:>18.1f}% "
+            f"{'False Positives Avoided':<35} {dm.score:>18.1f}% "
             f"{mutmut.score:>18.1f}%"
         )
 
-        speedup = mutmut.execution_time / dm.execution_time
-        logger.info(f"SPEEDUP: {speedup:>18.1f}x faster")
+        if dm.execution_time > 0 and mutmut.execution_time > 0:
+            speedup = mutmut.execution_time / dm.execution_time
+            logger.info("-" * 75)
+            logger.info(f"SPEEDUP: dataframe-mutator is {speedup:.1f}x faster than mutmut")
 
-        if speedup > 1:
-            time_saved = mutmut.execution_time - dm.execution_time
-            logger.info(f"Time Saved: {time_saved:>18.2f}s")
+            if speedup > 1:
+                time_saved = mutmut.execution_time - dm.execution_time
+                logger.info(f"Time Saved: {time_saved:.2f}s")
 
         logger.info("=" * 70)
 
