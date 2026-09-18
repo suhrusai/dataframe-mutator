@@ -1,0 +1,222 @@
+name: Manual Benchmarking - mutmut vs Plugin
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_file:
+        description: 'Target Python file for benchmarking'
+        required: false
+        default: 'benchmarks/large_pipeline.py'
+        type: string
+      tests_dir:
+        description: 'Tests directory'
+        required: false
+        default: 'benchmarks/'
+        type: string
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,polars]"
+          pip install mutmut pytest
+
+      - name: Create large test pipeline
+        run: |
+          mkdir -p benchmarks
+          python -c "
+import textwrap
+
+# Create a realistic Polars ETL pipeline for benchmarking
+code = textwrap.dedent('''
+    import polars as pl
+
+    def process_sales_data(df):
+        \"\"\"ETL pipeline for sales data processing.\"\"\"
+        return (
+            df
+            .filter(pl.col(\"amount\") > 100)
+            .with_columns([
+                (pl.col(\"amount\") * 1.1).alias(\"adjusted_amount\"),
+                pl.col(\"date\").dt.year().alias(\"year\"),
+                pl.col(\"date\").dt.month().alias(\"month\"),
+            ])
+            .group_by(\"year\", \"month\")
+            .agg([
+                pl.col(\"adjusted_amount\").sum().alias(\"total_sales\"),
+                pl.col(\"adjusted_amount\").mean().alias(\"avg_sale\"),
+                pl.col(\"id\").count().alias(\"transaction_count\"),
+            ])
+            .sort(\"year\", \"month\", descending=[True, False])
+        )
+
+    def calculate_metrics(df):
+        \"\"\"Calculate business metrics.\"\"\"
+        return (
+            df
+            .with_columns([
+                (pl.col(\"total_sales\") / pl.col(\"transaction_count\")).alias(\"avg_transaction_value\"),
+                (pl.col(\"total_sales\") > 10000).alias(\"high_volume_month\"),
+            ])
+            .filter(pl.col(\"total_sales\") > 0)
+        )
+''')
+
+with open('benchmarks/large_pipeline.py', 'w') as f:
+    f.write(code)
+          "
+
+      - name: Create test file
+        run: |
+          mkdir -p benchmarks
+          python -c "
+import textwrap
+
+# Create test file that uses the ETL pipeline
+code = textwrap.dedent('''
+    import polars as pl
+    from benchmarks.large_pipeline import process_sales_data, calculate_metrics
+
+    def test_process_sales_data():
+        # Create sample data
+        df = pl.DataFrame({
+            \"id\": range(1, 1001),
+            \"amount\": [100 + i % 500 for i in range(1000)],
+            \"date\": [pl.datetime(2024, 1, (i % 28) + 1) for i in range(1000)],
+        })
+
+        result = process_sales_data(df)
+        assert result.shape[0] > 0
+        assert \"adjusted_amount\" in result.columns
+        assert \"year\" in result.columns
+
+    def test_calculate_metrics():
+        # Create sample aggregated data
+        df = pl.DataFrame({
+            \"year\": [2024, 2024, 2024],
+            \"month\": [1, 2, 3],
+            \"total_sales\": [50000, 75000, 100000],
+            \"avg_sale\": [100, 150, 200],
+            \"transaction_count\": [500, 500, 500],
+        })
+
+        result = calculate_metrics(df)
+        assert result.shape[0] == 3
+        assert \"avg_transaction_value\" in result.columns
+        assert \"high_volume_month\" in result.columns
+
+    def test_multiple_filters():
+        df = pl.DataFrame({
+            \"id\": range(1, 101),
+            \"amount\": [100 + i for i in range(100)],
+            \"date\": [pl.datetime(2024, 1, (i % 28) + 1) for i in range(100)],
+        })
+
+        result = (
+            df
+            .filter(pl.col(\"amount\") >= 120)
+            .filter(pl.col(\"amount\") <= 180)
+        )
+        assert result.shape[0] > 0
+
+    if __name__ == \"__main__\":
+        test_process_sales_data()
+        test_calculate_metrics()
+        test_multiple_filters()
+        print(\"All tests passed!\")
+''')
+
+with open('benchmarks/test_large_pipeline.py', 'w') as f:
+    f.write(code)
+          "
+
+      - name: Run benchmark - mutmut vs mutmut+plugin
+        run: |
+          python scripts/benchmark_mutmut.py \
+            --target-file "${{ inputs.target_file }}" \
+            --tests-dir "${{ inputs.tests_dir }}"
+
+      - name: Display benchmark results
+        if: always()
+        run: |
+          python -c "
+import json
+from pathlib import Path
+
+results_file = Path('benchmarks/mutmut_comparison.json')
+if results_file.exists():
+    with open(results_file) as f:
+        results = json.load(f)
+
+    print('\\n' + '='*70)
+    print('BENCHMARK RESULTS: mutmut vs mutmut+dataframe-mutator plugin')
+    print('='*70)
+
+    mutmut_only = results.get('mutmut_only', {})
+    mutmut_plugin = results.get('mutmut_with_plugin', {})
+
+    if 'error' not in mutmut_only and 'error' not in mutmut_plugin:
+        mutmut_time = mutmut_only.get('execution_time', 0)
+        plugin_time = mutmut_plugin.get('execution_time', 0)
+
+        print(f'\\nmutmut (vanilla):        {mutmut_time:.2f}s')
+        print(f'mutmut + plugin:        {plugin_time:.2f}s')
+
+        if plugin_time > 0:
+            speedup = mutmut_time / plugin_time
+            print(f'\\nSpeedup:                {speedup:.1f}x faster with plugin')
+            time_saved = mutmut_time - plugin_time
+            print(f'Time saved per run:     {time_saved:.2f}s')
+
+        mutmut_mutations = mutmut_only.get('mutations_tested', 0)
+        plugin_mutations = mutmut_plugin.get('mutations_tested', 0)
+
+        if mutmut_mutations > 0:
+            skipped = mutmut_mutations - plugin_mutations
+            skip_pct = (skipped / mutmut_mutations) * 100
+            print(f'\\nMutations skipped:      {skipped} ({skip_pct:.1f}%)')
+            print(f'Mutations tested:       {mutmut_mutations} -> {plugin_mutations}')
+    else:
+        print('\\n⚠️ Benchmark had errors:')
+        if 'error' in mutmut_only:
+            print(f'  mutmut: {mutmut_only[\"error\"]}')
+        if 'error' in mutmut_plugin:
+            print(f'  mutmut+plugin: {mutmut_plugin[\"error\"]}')
+
+    print('\\n' + '='*70 + '\\n')
+else:
+    print('❌ Results file not found')
+          "
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: benchmark-mutmut-comparison
+          path: benchmarks/mutmut_comparison.json
+          retention-days: 30
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Benchmark Complete ✓" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Comparison: mutmut vs mutmut+dataframe-mutator plugin" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Inputs:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Target file: \`${{ inputs.target_file }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Tests directory: \`${{ inputs.tests_dir }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Results:** See uploaded artifact \`benchmark-mutmut-comparison\`" >> $GITHUB_STEP_SUMMARY
