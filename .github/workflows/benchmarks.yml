@@ -102,8 +102,8 @@ jobs:
           with open('benchmark-reports/${{ matrix.os }}-${{ matrix.arch }}-metrics.txt', 'w') as f:
               f.write(metrics)
 
-          print(f"✅ TPC-H: {tpch_passed} tests")
-          print(f"✅ Ops: {comp_passed} tests")
+          print(f"[PASS] TPC-H: {tpch_passed} tests")
+          print(f"[PASS] Ops: {comp_passed} tests")
           EXTRACT_METRICS
 
       - name: Upload benchmark results
