@@ -29,6 +29,7 @@ class DataframeMutatorPlugin:
         # Load operators on init
         try:
             from .operators import get_all_polars_operators
+
             self.operators = get_all_polars_operators()
         except Exception:
             self.operators = []
@@ -59,9 +60,7 @@ class DataframeMutatorPlugin:
                     mutmut_state.register_operator(operator_class)
                     logger.debug(f"Registered {operator_class.__name__}")
                 except Exception as e:
-                    logger.warning(
-                        f"Failed to register {operator_class.__name__}: {e}"
-                    )
+                    logger.warning(f"Failed to register {operator_class.__name__}: {e}")
 
             self.operators_registered = True
             logger.info("All Polars operators registered successfully")
@@ -70,9 +69,7 @@ class DataframeMutatorPlugin:
             logger.error(f"Failed to register operators: {e}")
             raise
 
-    def register_filter(
-        self, mutmut_state: Any, _should_mutate_func: Callable
-    ) -> None:
+    def register_filter(self, mutmut_state: Any, _should_mutate_func: Callable) -> None:
         """Register mutation filter with mutmut.
 
         Args:
@@ -89,10 +86,7 @@ class DataframeMutatorPlugin:
             filter_instance = PolarsMutationFilter()
 
             # Register the filter with mutmut's mutation pipeline
-            mutmut_state.register_filter(
-                filter_instance.should_mutate,
-                priority="high"
-            )
+            mutmut_state.register_filter(filter_instance.should_mutate, priority="high")
 
             self.filter_registered = True
             logger.info("Polars mutation filter registered")

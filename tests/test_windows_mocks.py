@@ -17,8 +17,8 @@ class TestPluginWithMockedPolars:
 
         plugin = get_plugin()
         assert plugin is not None
-        assert hasattr(plugin, 'register_operators')
-        assert hasattr(plugin, 'register_filter')
+        assert hasattr(plugin, "register_operators")
+        assert hasattr(plugin, "register_filter")
 
     def test_filter_works_with_mocked_config(self):
         """Filter should work with mocked configuration."""

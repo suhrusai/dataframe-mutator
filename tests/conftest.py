@@ -7,15 +7,9 @@ import pytest
 
 def pytest_configure(config):
     """Register custom markers."""
-    config.addinivalue_line(
-        "markers", "windows: mark test to run only on Windows"
-    )
-    config.addinivalue_line(
-        "markers", "linux: mark test to run only on Linux"
-    )
-    config.addinivalue_line(
-        "markers", "polars_available: mark test requiring Polars"
-    )
+    config.addinivalue_line("markers", "windows: mark test to run only on Windows")
+    config.addinivalue_line("markers", "linux: mark test to run only on Linux")
+    config.addinivalue_line("markers", "polars_available: mark test requiring Polars")
 
 
 def pytest_collection_modifyitems(config, items):

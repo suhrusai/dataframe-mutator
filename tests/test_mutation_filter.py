@@ -87,10 +87,12 @@ class TestFilterConfiguration:
     def test_filter_config_from_dict(self):
         """Test loading configuration from dictionary."""
         config = FilterConfig()
-        config.from_dict({
-            "enabled": False,
-            "skip_column_names": False,
-        })
+        config.from_dict(
+            {
+                "enabled": False,
+                "skip_column_names": False,
+            }
+        )
         assert config.enabled is False
         assert config.skip_column_names is False
         assert config.skip_string_literals is True  # Default unchanged
@@ -117,19 +119,16 @@ class TestColumnNameDetection:
     def test_detect_column_name_change(self):
         """Test detecting when column name changes."""
         assert (
-            PolarsMutationFilter._is_column_name_mutation(
-                'pl.col("age")',
-                'pl.col("ages")'
-            ) is True
+            PolarsMutationFilter._is_column_name_mutation('pl.col("age")', 'pl.col("ages")') is True
         )
 
     def test_no_false_positive_on_legitimate_change(self):
         """Test no false positive on legitimate code changes."""
         assert (
             PolarsMutationFilter._is_column_name_mutation(
-                'df.filter(pl.col("age") > 18)',
-                'df.filter(pl.col("age") >= 18)'
-            ) is False
+                'df.filter(pl.col("age") > 18)', 'df.filter(pl.col("age") >= 18)'
+            )
+            is False
         )
 
 
@@ -140,19 +139,19 @@ class TestStringLiteralDetection:
         """Test detecting quote style changes."""
         assert (
             PolarsMutationFilter._is_string_literal_mutation(
-                'df.select("name")',
-                "df.select('name')"
-            ) is True
+                'df.select("name")', "df.select('name')"
+            )
+            is True
         )
 
     def test_detect_long_string_change(self):
         """Test detecting long string changes."""
-        original = '''df.with_columns([
+        original = """df.with_columns([
             pl.col("description").str.replace("foo", "bar")
-        ])'''
-        mutated = '''df.with_columns([
+        ])"""
+        mutated = """df.with_columns([
             pl.col("description").str.replace("baz", "qux")
-        ])'''
+        ])"""
         # Long strings changed - should be detected
         result = PolarsMutationFilter._is_string_literal_mutation(original, mutated)
         # Result depends on whether the strings are > 20 chars

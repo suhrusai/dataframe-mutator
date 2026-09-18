@@ -117,7 +117,7 @@ class SemanticMutationAnalyzer:
             Set of aggregation names (sum, mean, count, etc)
         """
         aggs = set()
-        agg_pattern = r'\.(sum|mean|min|max|count|median|std|var)\('
+        agg_pattern = r"\.(sum|mean|min|max|count|median|std|var)\("
 
         for match in re.finditer(agg_pattern, self.code):
             aggs.add(match.group(1))
@@ -131,7 +131,7 @@ class SemanticMutationAnalyzer:
             Set of filter operators (>, <, ==, !=, etc)
         """
         filters = set()
-        filter_pattern = r'(==|!=|>=|<=|>|<)'
+        filter_pattern = r"(==|!=|>=|<=|>|<)"
 
         for match in re.finditer(filter_pattern, self.code):
             filters.add(match.group(1))
@@ -145,7 +145,7 @@ class SemanticMutationAnalyzer:
             Set of join types (inner, left, outer, cross)
         """
         joins = set()
-        join_pattern = r'\.join\(|\.cross_join\(|\.left_join\(|\.inner_join\('
+        join_pattern = r"\.join\(|\.cross_join\(|\.left_join\(|\.inner_join\("
 
         for match in re.finditer(join_pattern, self.code):
             join_type = match.group(0).strip(".").rstrip("(")
@@ -202,21 +202,19 @@ class SemanticMutationAnalyzer:
             return True
 
         # Different filter operators = significant
-        orig_filters = set(re.findall(r'(==|!=|>=|<=|>|<)', original))
-        mut_filters = set(re.findall(r'(==|!=|>=|<=|>|<)', mutated))
+        orig_filters = set(re.findall(r"(==|!=|>=|<=|>|<)", original))
+        mut_filters = set(re.findall(r"(==|!=|>=|<=|>|<)", mutated))
         if orig_filters != mut_filters:
             return True
 
         # Different aggregations = significant
-        return self._extract_aggregations(original) != self._extract_aggregations(
-            mutated
-        )
+        return self._extract_aggregations(original) != self._extract_aggregations(mutated)
 
     @staticmethod
     def _extract_operations(code: str) -> Set[str]:
         """Extract all operations from code."""
         ops = set()
-        pattern = r'\.([a-z_]+)\('
+        pattern = r"\.([a-z_]+)\("
         for match in re.finditer(pattern, code):
             ops.add(match.group(1))
         return ops
@@ -225,7 +223,7 @@ class SemanticMutationAnalyzer:
     def _extract_filters(code: str) -> Set[str]:
         """Extract all filters from code."""
         filters = set()
-        for match in re.finditer(r'\.filter\([^)]+\)', code):
+        for match in re.finditer(r"\.filter\([^)]+\)", code):
             filters.add(match.group(0))
         return filters
 
@@ -233,7 +231,7 @@ class SemanticMutationAnalyzer:
     def _extract_aggregations(code: str) -> Set[str]:
         """Extract all aggregations from code."""
         aggs = set()
-        pattern = r'\.(sum|mean|min|max|count|median|std|var)\('
+        pattern = r"\.(sum|mean|min|max|count|median|std|var)\("
         for match in re.finditer(pattern, code):
             aggs.add(match.group(0))
         return aggs
