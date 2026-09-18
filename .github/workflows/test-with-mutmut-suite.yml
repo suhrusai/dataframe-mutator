@@ -178,7 +178,7 @@ jobs:
           # Run mutmut with plugin
           cd test_project
           echo "Running mutmut with our plugin..."
-          mutmut run --paths src/ --tests-dir tests/ 2>&1 | head -50
+          mutmut run src/ --tests-dir tests/ 2>&1 | head -50
 
       - name: Plugin Status Report
         run: |
