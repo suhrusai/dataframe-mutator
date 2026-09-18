@@ -15,8 +15,6 @@ import pytest
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Tuple
 
-pytestmark = pytest.mark.linux
-
 try:
     import polars as pl
     HAS_POLARS = True

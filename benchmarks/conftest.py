@@ -12,10 +12,16 @@ def pytest_configure(config):
 
 
 def pytest_collection_modifyitems(config, items):
-    """Skip Polars tests on Windows."""
-    is_windows = sys.platform.startswith("win")
+    """Skip tests if Polars is not available."""
+    # Check if Polars is actually available (works on Windows if CPU support available)
+    try:
+        import polars  # noqa: F401
+        polars_available = True
+    except (ImportError, RuntimeError):
+        polars_available = False
 
+    # Skip tests only if Polars actually unavailable
+    # Don't skip based on OS - Polars should work on both Windows and Linux
     for item in items:
-        # Skip all linux-marked tests on Windows
-        if item.get_closest_marker("linux") and is_windows:
-            item.add_marker(pytest.mark.skip(reason="Requires Polars (Linux/WSL only)"))
+        if not polars_available:
+            item.add_marker(pytest.mark.skip(reason="Polars not available on this platform"))
