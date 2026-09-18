@@ -7,7 +7,7 @@ and determine which mutations are likely to be meaningful.
 import ast
 import logging
 import re
-from typing import Dict, List, Set
+from typing import Any, Dict, Optional, Set
 
 logger = logging.getLogger(__name__)
 
@@ -32,14 +32,14 @@ class SemanticMutationAnalyzer:
         self.tree = self._parse(code)
         self._analyze()
 
-    def _parse(self, code: str) -> ast.AST:
+    def _parse(self, code: str) -> Optional[ast.AST]:
         """Parse code to AST.
 
         Args:
             code: Python source code
 
         Returns:
-            AST tree
+            AST tree or None if parsing fails
         """
         try:
             return ast.parse(code)
@@ -66,24 +66,24 @@ class SemanticMutationAnalyzer:
         self.filters = self._find_filters()
         self.joins = self._find_joins()
 
-    def _find_columns(self) -> Set[str]:
+    def _find_columns(self) -> Set[Any]:
         """Find all column references.
 
         Returns:
-            Set of column names
+            Set of column names (typically strings)
         """
-        columns = set()
+        columns: Set[Any] = set()
 
         class ColumnVisitor(ast.NodeVisitor):
             def visit_Call(self, node):
                 # Look for pl.col("name") patterns
-                if isinstance(node.func, ast.Attribute):
-                    if (
-                        node.func.attr == "col"
-                        and node.args
-                        and isinstance(node.args[0], ast.Constant)
-                    ):
-                        columns.add(node.args[0].value)
+                if (
+                    isinstance(node.func, ast.Attribute)
+                    and node.func.attr == "col"
+                    and node.args
+                    and isinstance(node.args[0], ast.Constant)
+                ):
+                    columns.add(node.args[0].value)
                 self.generic_visit(node)
 
         if self.tree:
@@ -101,9 +101,8 @@ class SemanticMutationAnalyzer:
 
         class OperationVisitor(ast.NodeVisitor):
             def visit_Attribute(self, node):
-                if hasattr(node.value, "id"):
-                    if node.value.id == "pl":
-                        operations.add(node.attr)
+                if hasattr(node.value, "id") and node.value.id == "pl":
+                    operations.add(node.attr)
                 self.generic_visit(node)
 
         if self.tree:
@@ -118,7 +117,7 @@ class SemanticMutationAnalyzer:
             Set of aggregation names (sum, mean, count, etc)
         """
         aggs = set()
-        agg_pattern = r'\.(sum|mean|min|max|count|median|std|var)\('
+        agg_pattern = r"\.(sum|mean|min|max|count|median|std|var)\("
 
         for match in re.finditer(agg_pattern, self.code):
             aggs.add(match.group(1))
@@ -132,7 +131,7 @@ class SemanticMutationAnalyzer:
             Set of filter operators (>, <, ==, !=, etc)
         """
         filters = set()
-        filter_pattern = r'(==|!=|>=|<=|>|<)'
+        filter_pattern = r"(==|!=|>=|<=|>|<)"
 
         for match in re.finditer(filter_pattern, self.code):
             filters.add(match.group(1))
@@ -146,7 +145,7 @@ class SemanticMutationAnalyzer:
             Set of join types (inner, left, outer, cross)
         """
         joins = set()
-        join_pattern = r'\.join\(|\.cross_join\(|\.left_join\(|\.inner_join\('
+        join_pattern = r"\.join\(|\.cross_join\(|\.left_join\(|\.inner_join\("
 
         for match in re.finditer(join_pattern, self.code):
             join_type = match.group(0).strip(".").rstrip("(")
@@ -203,24 +202,19 @@ class SemanticMutationAnalyzer:
             return True
 
         # Different filter operators = significant
-        orig_filters = set(re.findall(r'(==|!=|>=|<=|>|<)', original))
-        mut_filters = set(re.findall(r'(==|!=|>=|<=|>|<)', mutated))
+        orig_filters = set(re.findall(r"(==|!=|>=|<=|>|<)", original))
+        mut_filters = set(re.findall(r"(==|!=|>=|<=|>|<)", mutated))
         if orig_filters != mut_filters:
             return True
 
         # Different aggregations = significant
-        if self._extract_aggregations(original) != self._extract_aggregations(
-            mutated
-        ):
-            return True
-
-        return False
+        return self._extract_aggregations(original) != self._extract_aggregations(mutated)
 
     @staticmethod
     def _extract_operations(code: str) -> Set[str]:
         """Extract all operations from code."""
         ops = set()
-        pattern = r'\.([a-z_]+)\('
+        pattern = r"\.([a-z_]+)\("
         for match in re.finditer(pattern, code):
             ops.add(match.group(1))
         return ops
@@ -229,7 +223,7 @@ class SemanticMutationAnalyzer:
     def _extract_filters(code: str) -> Set[str]:
         """Extract all filters from code."""
         filters = set()
-        for match in re.finditer(r'\.filter\([^)]+\)', code):
+        for match in re.finditer(r"\.filter\([^)]+\)", code):
             filters.add(match.group(0))
         return filters
 
@@ -237,12 +231,12 @@ class SemanticMutationAnalyzer:
     def _extract_aggregations(code: str) -> Set[str]:
         """Extract all aggregations from code."""
         aggs = set()
-        pattern = r'\.(sum|mean|min|max|count|median|std|var)\('
+        pattern = r"\.(sum|mean|min|max|count|median|std|var)\("
         for match in re.finditer(pattern, code):
             aggs.add(match.group(0))
         return aggs
 
-    def summarize(self) -> Dict[str, any]:
+    def summarize(self) -> Dict[str, Any]:
         """Summarize analysis results.
 
         Returns:

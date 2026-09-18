@@ -4,8 +4,6 @@ Tests verify that the analyzer correctly understands Polars code
 and can identify mutations that are semantically meaningful.
 """
 
-import pytest
-
 from dataframe_mutator.filters import SemanticMutationAnalyzer
 
 
@@ -114,8 +112,8 @@ class TestComplexCodeAnalysis:
 
     def test_analyze_etl_pipeline(self):
         """Test analyzing a real ETL pipeline."""
-        code = '''def process_sales(df):
-    return df.filter(pl.col("amount") > 100).with_columns([(pl.col("amount") * 1.1).alias("adjusted"), pl.col("date").dt.year().alias("year")]).group_by("year").agg([pl.col("adjusted").sum().alias("total"), pl.col("id").count().alias("count")]).sort("year", descending=True)'''
+        code = """def process_sales(df):
+    return df.filter(pl.col("amount") > 100).with_columns([(pl.col("amount") * 1.1).alias("adjusted"), pl.col("date").dt.year().alias("year")]).group_by("year").agg([pl.col("adjusted").sum().alias("total"), pl.col("id").count().alias("count")]).sort("year", descending=True)"""
         analyzer = SemanticMutationAnalyzer(code)
         summary = analyzer.summarize()
 

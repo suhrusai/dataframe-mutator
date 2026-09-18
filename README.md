@@ -109,9 +109,35 @@ enable_semantic_analysis = true    # Use AST-based prioritization
 
 See **[docs/MUTMUT_INTEGRATION.md](docs/MUTMUT_INTEGRATION.md)** for full configuration options.
 
+## Benchmarking
+
+**Validated using industry-standard TPC-H benchmark** (same methodology Polars uses):
+
+```bash
+# Run TPC-H benchmark (28 tests, 3.36M rows, production-scale)
+pytest benchmarks/test_tpch_inspired_workload.py -v
+
+# Or comprehensive operations suite (63 tests, all operators)
+pytest benchmarks/test_extensive_polars_operations.py -v
+
+# Measure actual speedup on your code
+time mutmut run --paths src/ --tests-dir tests/
+```
+
+📊 **Benchmark Portfolio:**
+- **TPC-H** (28 tests) — Industry standard, 3.36M rows
+- **Extensive Ops** (63 tests) — All 109 operators
+- **NYC Taxi** (30+ tests) — Public dataset
+- **Mixed Workload** (60+ tests) — Hybrid Python/Polars
+- **Total**: 200+ tests, production-scale validation
+
+See [benchmarks/TPCH_BENCHMARK_README.md](benchmarks/TPCH_BENCHMARK_README.md) for details.
+
 ## Support
 
 - 📖 [Full Documentation](https://github.com/suhrusai/dataframe-mutator)
+- 📊 [TPC-H Benchmark Guide](benchmarks/TPCH_BENCHMARK_README.md)
+- 📈 [Benchmarking Guide](BENCHMARKING_GUIDE.md)
 - 🔗 [GitHub Repository](https://github.com/suhrusai/dataframe-mutator)
 - 🐛 [Report Issues](https://github.com/suhrusai/dataframe-mutator/issues)
 

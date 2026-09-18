@@ -29,6 +29,7 @@ class DataframeMutatorPlugin:
         # Load operators on init
         try:
             from .operators import get_all_polars_operators
+
             self.operators = get_all_polars_operators()
         except Exception:
             self.operators = []
@@ -59,9 +60,7 @@ class DataframeMutatorPlugin:
                     mutmut_state.register_operator(operator_class)
                     logger.debug(f"Registered {operator_class.__name__}")
                 except Exception as e:
-                    logger.warning(
-                        f"Failed to register {operator_class.__name__}: {e}"
-                    )
+                    logger.warning(f"Failed to register {operator_class.__name__}: {e}")
 
             self.operators_registered = True
             logger.info("All Polars operators registered successfully")
@@ -70,9 +69,7 @@ class DataframeMutatorPlugin:
             logger.error(f"Failed to register operators: {e}")
             raise
 
-    def register_filter(
-        self, mutmut_state: Any, should_mutate_func: Callable
-    ) -> None:
+    def register_filter(self, mutmut_state: Any, _should_mutate_func: Callable) -> None:
         """Register mutation filter with mutmut.
 
         Args:
@@ -89,10 +86,7 @@ class DataframeMutatorPlugin:
             filter_instance = PolarsMutationFilter()
 
             # Register the filter with mutmut's mutation pipeline
-            mutmut_state.register_filter(
-                filter_instance.should_mutate,
-                priority="high"
-            )
+            mutmut_state.register_filter(filter_instance.should_mutate, priority="high")
 
             self.filter_registered = True
             logger.info("Polars mutation filter registered")
@@ -139,6 +133,7 @@ class DataframeMutatorPlugin:
 
 # Plugin instance for mutmut discovery
 _plugin_instance: Optional[DataframeMutatorPlugin] = None
+_filter_instance: Optional[Any] = None
 
 
 def get_plugin() -> DataframeMutatorPlugin:
@@ -151,3 +146,47 @@ def get_plugin() -> DataframeMutatorPlugin:
     if _plugin_instance is None:
         _plugin_instance = DataframeMutatorPlugin()
     return _plugin_instance
+
+
+def polars_filter(original: str, mutated: str) -> bool:
+    """Mutation filter for Polars code - entry point for mutmut.
+
+    Fast filter without AST parsing to avoid slowdown.
+
+    Args:
+        original: Original code
+        mutated: Mutated code
+
+    Returns:
+        True if mutation should be tested, False to skip
+    """
+    try:
+        # Quick checks without expensive AST parsing
+
+        # Skip if no actual change
+        if original == mutated:
+            return False
+
+        # Skip column name mutations (quotes differ, code structure same)
+        import re
+        col_pattern = r'["\'][^"\']*["\']'
+        orig_no_strings = re.sub(col_pattern, "QUOTED", original)
+        mut_no_strings = re.sub(col_pattern, "QUOTED", mutated)
+        if orig_no_strings == mut_no_strings:
+            logger.debug("Skipping string literal mutation")
+            return False
+
+        # Skip whitespace-only changes
+        orig_normalized = re.sub(r"\s+", "", original)
+        mut_normalized = re.sub(r"\s+", "", mutated)
+        if orig_normalized == mut_normalized:
+            logger.debug("Skipping whitespace-only change")
+            return False
+
+        # All other mutations should be tested
+        return True
+
+    except Exception as e:
+        logger.error(f"Error in polars_filter: {e}")
+        # On error, let the mutation through (return True)
+        return True

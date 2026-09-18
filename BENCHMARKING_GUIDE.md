@@ -1,20 +1,56 @@
 # Benchmarking Guide: Empirical Performance Testing
 
-**v2.0.0 includes comprehensive benchmarks. Measure real speedups on your code.**
+**v2.0.0 includes industry-standard benchmarks. Measure real speedups on your code.**
 
-## Quick Start
+## Automatic CI/CD Benchmarks
+
+Every PR automatically runs benchmarks and posts results as comments:
+
+### Mutmut Plugin Comparison
+- **Runs on**: Every PR push
+- **Infrastructure**: Linux (ubuntu-latest)
+- **What it measures**: 
+  - Mutations created (vanilla vs plugin)
+  - Filtering efficiency (% reduction)
+  - Execution metrics
+- **Result**: PR comment with side-by-side comparison table
+
+See [`test_benchmark/`](test_benchmark/) for the test project and [`.github/workflows/mutmut-comparison.yml`](.github/workflows/mutmut-comparison.yml) for workflow details.
+
+## Recommended: TPC-H Benchmark
+
+The **TPC-H (Transaction Processing Performance Council) benchmark** is the industry standard used by Polars, PostgreSQL, and DuckDB for performance testing.
 
 ```bash
 # Install
 pip install git+https://github.com/suhrusai/dataframe-mutator.git@v2.0.0
 pip install mutmut polars pytest
 
-# Run NYC Taxi benchmark (simulated public data)
+# Run TPC-H benchmark (28 tests, 3.36M rows, production-scale)
 cd benchmarks/
+pytest test_tpch_inspired_workload.py -v
+
+# Time the mutation testing (requires Linux/WSL)
+time mutmut run --paths ../src/dataframe_mutator/ --tests-dir ../tests/
+```
+
+⚠️ **Note**: `mutmut` requires Linux/WSL. Windows native is not supported. See [issue #397](https://github.com/boxed/mutmut/issues/397).
+
+See [TPCH_BENCHMARK_README.md](TPCH_BENCHMARK_README.md) for complete TPC-H documentation.
+
+## Alternative Benchmarks
+
+For other use cases, we provide additional benchmark suites:
+
+```bash
+# Comprehensive operations (63 tests, all 109 Polars operators)
+pytest test_extensive_polars_operations.py -v
+
+# Real public dataset (NYC Taxi, 10k rows)
 pytest test_nyc_taxi_etl.py -v
 
-# Time the mutation testing
-time mutmut run --paths ../src/dataframe_mutator/ --tests-dir ../tests/
+# Hybrid Python/Polars workload (60+ tests)
+pytest test_mixed_workload.py -v
 ```
 
 ## What Gets Measured

@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "test-benchmark"
+version = "1.0.0"
+description = "Test project for mutmut benchmarking"
+requires-python = ">=3.10"
+dependencies = ["polars>=0.19", "pytest"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+pythonpath = ["."]
+
+[tool.mutmut]
+source_paths = ["polars_code"]
+python_targets = "3.11"
+# Skip patterns that mutmut recognizes:
+# - String literals (low-value)
+# - Comments (no behavior impact)
+tests_dir = "tests"

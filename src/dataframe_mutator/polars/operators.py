@@ -25,18 +25,12 @@ class PolarsFilterOperatorMutation(MutationOperator):
     def mutate_code(self, code: str) -> str:
         """Mutate comparison operators in filter conditions."""
         mutations = [
-            (r"\.filter\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*==",
-             r".filter( pl.col('\1') !="),
-            (r"\.filter\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*!=",
-             r".filter( pl.col('\1') =="),
-            (r"\.filter\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*>",
-             r".filter( pl.col('\1') <="),
-            (r"\.filter\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*<",
-             r".filter( pl.col('\1') >="),
-            (r"\.filter\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*>=",
-             r".filter( pl.col('\1') <"),
-            (r"\.filter\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*<=",
-             r".filter( pl.col('\1') >"),
+            (r"\.filter\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*==", r".filter( pl.col('\1') !="),
+            (r"\.filter\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*!=", r".filter( pl.col('\1') =="),
+            (r"\.filter\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*>", r".filter( pl.col('\1') <="),
+            (r"\.filter\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*<", r".filter( pl.col('\1') >="),
+            (r"\.filter\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*>=", r".filter( pl.col('\1') <"),
+            (r"\.filter\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*<=", r".filter( pl.col('\1') >"),
         ]
 
         for pattern, replacement in mutations:
@@ -84,8 +78,7 @@ class PolarsAggregationMutation(MutationOperator):
         """Check if this is a Polars aggregation."""
         if isinstance(node, str):
             agg_funcs = ("sum", "mean", "min", "max", "std", "var", "median")
-            return any(f".{func}()" in node or f".{func})" in node
-                      for func in agg_funcs)
+            return any(f".{func}()" in node or f".{func})" in node for func in agg_funcs)
         return False
 
     def mutate(self, node) -> str:
@@ -129,10 +122,8 @@ class PolarsGroupByMutation(MutationOperator):
     def mutate_code(self, code: str) -> str:
         """Mutate group_by to remove a grouping column."""
         patterns = [
-            (r'\.group_by\(\["([^"]+)",\s*"([^"]+)"\]\)',
-             r'.group_by(["\1"])'),
-            (r"\.group_by\(\['([^']+)',\s*'([^']+)'\]\)",
-             r".group_by(['\1'])"),
+            (r'\.group_by\(\["([^"]+)",\s*"([^"]+)"\]\)', r'.group_by(["\1"])'),
+            (r"\.group_by\(\['([^']+)',\s*'([^']+)'\]\)", r".group_by(['\1'])"),
         ]
 
         for pattern, replacement in patterns:
@@ -192,10 +183,14 @@ class PolarsSortMutation(MutationOperator):
     def mutate_code(self, code: str) -> str:
         """Mutate sort direction."""
         mutations = [
-            (r'\.sort\(\s*by=["\']([^"\']+)["\'],\s*descending=False',
-             r'.sort( by="\1", descending=True'),
-            (r'\.sort\(\s*by=["\']([^"\']+)["\'],\s*descending=True',
-             r'.sort( by="\1", descending=False'),
+            (
+                r'\.sort\(\s*by=["\']([^"\']+)["\'],\s*descending=False',
+                r'.sort( by="\1", descending=True',
+            ),
+            (
+                r'\.sort\(\s*by=["\']([^"\']+)["\'],\s*descending=True',
+                r'.sort( by="\1", descending=False',
+            ),
             (r"\.sort\(\s*descending=False", ".sort( descending=True"),
             (r"\.sort\(\s*descending=True", ".sort( descending=False"),
         ]
@@ -226,10 +221,14 @@ class PolarsWithColumnsMutation(MutationOperator):
         """Mutate with_columns to remove or modify expressions."""
         # Mutate comparison operators within with_columns
         mutations = [
-            (r"\.with_columns\(\s*\(pl\.col\(['\"]([^'\"]+)['\"]\)\s*==",
-             r".with_columns( (pl.col('\1') !="),
-            (r"\.with_columns\(\s*pl\.when\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*==",
-             r".with_columns( pl.when( pl.col('\1') !="),
+            (
+                r"\.with_columns\(\s*\(pl\.col\(['\"]([^'\"]+)['\"]\)\s*==",
+                r".with_columns( (pl.col('\1') !=",
+            ),
+            (
+                r"\.with_columns\(\s*pl\.when\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*==",
+                r".with_columns( pl.when( pl.col('\1') !=",
+            ),
         ]
 
         for pattern, replacement in mutations:
@@ -283,12 +282,7 @@ class PolarsRenameMutation(MutationOperator):
         # Swap the rename mapping
         pattern = r'\.rename\(\s*\{\s*["\']([^"\']+)["\']\s*:\s*["\']([^"\']+)["\']\s*\}\s*\)'
         if re.search(pattern, code):
-            return re.sub(
-                pattern,
-                r'.rename( { "\2": "\1" })',
-                code,
-                count=1
-            )
+            return re.sub(pattern, r'.rename( { "\2": "\1" })', code, count=1)
         return code
 
 
@@ -301,7 +295,7 @@ class PolarsDistinctMutation(MutationOperator):
     def matches(self, node) -> bool:
         """Check if this is a Polars unique/distinct operation."""
         if isinstance(node, str):
-            return (".unique(" in node or ".distinct(" in node)
+            return ".unique(" in node or ".distinct(" in node
         return False
 
     def mutate(self, node) -> str:
@@ -383,8 +377,13 @@ class PolarsCastMutation(MutationOperator):
     def matches(self, node) -> bool:
         """Check if this is a Polars cast operation."""
         if isinstance(node, str):
-            return (".cast(" in node or ".astype(" in node or
-                    ".str(" in node or ".int(" in node or ".float(" in node)
+            return (
+                ".cast(" in node
+                or ".astype(" in node
+                or ".str(" in node
+                or ".int(" in node
+                or ".float(" in node
+            )
         return False
 
     def mutate(self, node) -> str:
@@ -471,10 +470,17 @@ class PolarsStringOperationsMutation(MutationOperator):
         """Check if this is a Polars string operation."""
         if isinstance(node, str):
             string_ops = (
-                ".str.to_uppercase()", ".str.to_lowercase()",
-                ".str.strip()", ".str.lstrip()", ".str.rstrip()",
-                ".str.replace(", ".str.contains(", ".str.starts_with(",
-                ".str.ends_with(", ".str.lengths()", ".str.slice("
+                ".str.to_uppercase()",
+                ".str.to_lowercase()",
+                ".str.strip()",
+                ".str.lstrip()",
+                ".str.rstrip()",
+                ".str.replace(",
+                ".str.contains(",
+                ".str.starts_with(",
+                ".str.ends_with(",
+                ".str.lengths()",
+                ".str.slice(",
             )
             return any(op in node for op in string_ops)
         return False
@@ -491,10 +497,14 @@ class PolarsStringOperationsMutation(MutationOperator):
             (r"\.str\.strip\(\)", ".str.lstrip()"),
             (r"\.str\.lstrip\(\)", ".str.rstrip()"),
             (r"\.str\.rstrip\(\)", ".str.strip()"),
-            (r'\.str\.contains\(\s*["\']([^"\']+)["\']\s*,\s*literal=True',
-             r'.str.contains( "\1", literal=False'),
-            (r'\.str\.contains\(\s*["\']([^"\']+)["\']\s*,\s*literal=False',
-             r'.str.contains( "\1", literal=True'),
+            (
+                r'\.str\.contains\(\s*["\']([^"\']+)["\']\s*,\s*literal=True',
+                r'.str.contains( "\1", literal=False',
+            ),
+            (
+                r'\.str\.contains\(\s*["\']([^"\']+)["\']\s*,\s*literal=False',
+                r'.str.contains( "\1", literal=True',
+            ),
             (r"\.str\.lengths\(\)", ""),
         ]
 
@@ -513,7 +523,7 @@ class PolarsConcatMutation(MutationOperator):
     def matches(self, node) -> bool:
         """Check if this is a Polars concat operation."""
         if isinstance(node, str):
-            return ("pl.concat(" in node or ".concat(" in node)
+            return "pl.concat(" in node or ".concat(" in node
         return False
 
     def mutate(self, node) -> str:
@@ -523,12 +533,15 @@ class PolarsConcatMutation(MutationOperator):
     def mutate_code(self, code: str) -> str:
         """Mutate concat operations."""
         mutations = [
-            (r"pl\.concat\(([^)]+),\s*how=['\"]vertical['\"]\)",
-             r"pl.concat(\1, how='horizontal')"),
-            (r"pl\.concat\(([^)]+),\s*how=['\"]horizontal['\"]\)",
-             r"pl.concat(\1, how='vertical')"),
-            (r"\.concat\(([^)]+),\s*how=['\"]vertical['\"]\)",
-             r".concat(\1, how='horizontal')"),
+            (
+                r"pl\.concat\(([^)]+),\s*how=['\"]vertical['\"]\)",
+                r"pl.concat(\1, how='horizontal')",
+            ),
+            (
+                r"pl\.concat\(([^)]+),\s*how=['\"]horizontal['\"]\)",
+                r"pl.concat(\1, how='vertical')",
+            ),
+            (r"\.concat\(([^)]+),\s*how=['\"]vertical['\"]\)", r".concat(\1, how='horizontal')"),
         ]
 
         for pattern, replacement in mutations:
@@ -556,7 +569,7 @@ class PolarsMeltMutation(MutationOperator):
     def mutate_code(self, code: str) -> str:
         """Mutate melt operations."""
         # Simplify by removing id_vars
-        return re.sub(r'id_vars=\[[^\]]+\],\s*', "", code, count=1)
+        return re.sub(r"id_vars=\[[^\]]+\],\s*", "", code, count=1)
 
 
 class PolarsPivotMutation(MutationOperator):
@@ -582,7 +595,7 @@ class PolarsPivotMutation(MutationOperator):
             r'\.pivot\(\s*on=["\']([^"\']+)["\'],\s*index=["\']([^"\']+)["\']\)',
             r'.pivot( on="\2", index="\1")',
             code,
-            count=1
+            count=1,
         )
 
 
@@ -595,7 +608,7 @@ class PolarsWhenThenMutation(MutationOperator):
     def matches(self, node) -> bool:
         """Check if this is a Polars when/then operation."""
         if isinstance(node, str):
-            return ("pl.when(" in node or ".when(" in node)
+            return "pl.when(" in node or ".when(" in node
         return False
 
     def mutate(self, node) -> str:
@@ -605,12 +618,9 @@ class PolarsWhenThenMutation(MutationOperator):
     def mutate_code(self, code: str) -> str:
         """Mutate when/then conditions."""
         mutations = [
-            (r"pl\.when\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*==",
-             r"pl.when( pl.col('\1') !="),
-            (r"\.when\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*==",
-             r".when( pl.col('\1') !="),
-            (r"pl\.when\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*>",
-             r"pl.when( pl.col('\1') <"),
+            (r"pl\.when\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*==", r"pl.when( pl.col('\1') !="),
+            (r"\.when\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*==", r".when( pl.col('\1') !="),
+            (r"pl\.when\(\s*pl\.col\(['\"]([^'\"]+)['\"]\)\s*>", r"pl.when( pl.col('\1') <"),
         ]
 
         for pattern, replacement in mutations:
@@ -629,9 +639,15 @@ class PolarsDatetimeOperationsMutation(MutationOperator):
         """Check if this is a Polars datetime operation."""
         if isinstance(node, str):
             datetime_ops = (
-                ".dt.year()", ".dt.month()", ".dt.day()",
-                ".dt.hour()", ".dt.minute()", ".dt.second()",
-                ".dt.strftime(", ".dt.truncate(", ".dt.round("
+                ".dt.year()",
+                ".dt.month()",
+                ".dt.day()",
+                ".dt.hour()",
+                ".dt.minute()",
+                ".dt.second()",
+                ".dt.strftime(",
+                ".dt.truncate(",
+                ".dt.round(",
             )
             return any(op in node for op in datetime_ops)
         return False
@@ -669,8 +685,17 @@ class PolarsNumericalOperationsMutation(MutationOperator):
         """Check if this is a Polars numerical operation."""
         if isinstance(node, str):
             num_ops = (
-                ".abs()", ".sqrt()", ".round(", ".floor()", ".ceil()",
-                ".clip(", ".log(", ".log10(", ".exp()", ".sin(", ".cos("
+                ".abs()",
+                ".sqrt()",
+                ".round(",
+                ".floor()",
+                ".ceil()",
+                ".clip(",
+                ".log(",
+                ".log10(",
+                ".exp()",
+                ".sin(",
+                ".cos(",
             )
             return any(op in node for op in num_ops)
         return False
@@ -707,9 +732,16 @@ class PolarsListOperationsMutation(MutationOperator):
         """Check if this is a Polars list operation."""
         if isinstance(node, str):
             list_ops = (
-                ".list.len()", ".list.lengths()", ".list.reverse()",
-                ".list.sort(", ".list.unique(", ".list.max()", ".list.min()",
-                ".list.sum(", ".list.mean(", ".list.contains("
+                ".list.len()",
+                ".list.lengths()",
+                ".list.reverse()",
+                ".list.sort(",
+                ".list.unique(",
+                ".list.max()",
+                ".list.min()",
+                ".list.sum(",
+                ".list.mean(",
+                ".list.contains(",
             )
             return any(op in node for op in list_ops)
         return False
@@ -747,8 +779,8 @@ class PolarsArithmeticOperatorMutation(MutationOperator):
         if isinstance(node, str):
             # Look for arithmetic in expressions
             return bool(
-                re.search(r"pl\.col\(['\"]([^'\"]+)['\"]\)\s*[\+\-\*/]", node) or
-                re.search(r"pl\.lit\(\d+\)\s*[\+\-\*/]", node)
+                re.search(r"pl\.col\(['\"]([^'\"]+)['\"]\)\s*[\+\-\*/]", node)
+                or re.search(r"pl\.lit\(\d+\)\s*[\+\-\*/]", node)
             )
         return False
 
@@ -810,8 +842,11 @@ class PolarsWindowFunctionsMutation(MutationOperator):
     def matches(self, node) -> bool:
         """Check if this is a Polars window function."""
         if isinstance(node, str):
-            return (".over(" in node or ".partition_by(" in node or
-                    ("pl.col(" in node and ".sum().over" in node))
+            return (
+                ".over(" in node
+                or ".partition_by(" in node
+                or ("pl.col(" in node and ".sum().over" in node)
+            )
         return False
 
     def mutate(self, node) -> str:
@@ -823,9 +858,9 @@ class PolarsWindowFunctionsMutation(MutationOperator):
         mutations = [
             (r'\.over\(\s*["\']([^"\']+)["\']\)', ""),
             (r'\.partition_by\(\s*["\']([^"\']+)["\']\)', ""),
-            (r'\.sum\(\)\.over\(', r".mean().over("),
-            (r'\.mean\(\)\.over\(', r".sum().over("),
-            (r'\.rank\(\)\.over\(', r".row_number().over("),
+            (r"\.sum\(\)\.over\(", r".mean().over("),
+            (r"\.mean\(\)\.over\(", r".sum().over("),
+            (r"\.rank\(\)\.over\(", r".row_number().over("),
         ]
 
         for pattern, replacement in mutations:
@@ -906,7 +941,7 @@ class PolarsIsInMutation(MutationOperator):
     def matches(self, node) -> bool:
         """Check if this is a Polars is_in operation."""
         if isinstance(node, str):
-            return (".is_in(" in node or ".is_not_in(" in node)
+            return ".is_in(" in node or ".is_not_in(" in node
         return False
 
     def mutate(self, node) -> str:
@@ -935,8 +970,12 @@ class PolarsIsNullMutation(MutationOperator):
     def matches(self, node) -> bool:
         """Check if this is a Polars is_null operation."""
         if isinstance(node, str):
-            return (".is_null(" in node or ".is_not_null(" in node or
-                    ".is_null()" in node or ".is_not_null()" in node)
+            return (
+                ".is_null(" in node
+                or ".is_not_null(" in node
+                or ".is_null()" in node
+                or ".is_not_null()" in node
+            )
         return False
 
     def mutate(self, node) -> str:
@@ -975,10 +1014,8 @@ class PolarsInterpolationMutation(MutationOperator):
     def mutate_code(self, code: str) -> str:
         """Mutate interpolation operations."""
         mutations = [
-            (r'\.interpolate\(\s*method=["\']linear["\']\)',
-             r'.interpolate( method="nearest")'),
-            (r'\.interpolate\(\s*method=["\']nearest["\']\)',
-             r'.interpolate( method="linear")'),
+            (r'\.interpolate\(\s*method=["\']linear["\']\)', r'.interpolate( method="nearest")'),
+            (r'\.interpolate\(\s*method=["\']nearest["\']\)', r'.interpolate( method="linear")'),
         ]
 
         for pattern, replacement in mutations:
@@ -1088,8 +1125,8 @@ class PolarsValueCountsMutation(MutationOperator):
         """Mutate value_counts operations."""
         mutations = [
             (r"\.value_counts\(\)", ""),
-            (r'\.value_counts\(\s*sort=True\)', r'.value_counts( sort=False)'),
-            (r'\.value_counts\(\s*sort=False\)', r'.value_counts( sort=True)'),
+            (r"\.value_counts\(\s*sort=True\)", r".value_counts( sort=False)"),
+            (r"\.value_counts\(\s*sort=False\)", r".value_counts( sort=True)"),
         ]
 
         for pattern, replacement in mutations:
@@ -1118,8 +1155,8 @@ class PolarsNUniqueMutation(MutationOperator):
         """Mutate n_unique operations."""
         mutations = [
             (r"\.n_unique\(\)", ""),
-            (r'\.n_unique\(\s*approx=True\)', r'.n_unique( approx=False)'),
-            (r'\.n_unique\(\s*approx=False\)', r'.n_unique( approx=True)'),
+            (r"\.n_unique\(\s*approx=True\)", r".n_unique( approx=False)"),
+            (r"\.n_unique\(\s*approx=False\)", r".n_unique( approx=True)"),
         ]
 
         for pattern, replacement in mutations:
@@ -1147,10 +1184,8 @@ class PolarsBinarySearchMutation(MutationOperator):
     def mutate_code(self, code: str) -> str:
         """Mutate binary search operations."""
         mutations = [
-            (r'\.search_sorted\(\s*side=["\']left["\']\)',
-             r'.search_sorted( side="right")'),
-            (r'\.search_sorted\(\s*side=["\']right["\']\)',
-             r'.search_sorted( side="left")'),
+            (r'\.search_sorted\(\s*side=["\']left["\']\)', r'.search_sorted( side="right")'),
+            (r'\.search_sorted\(\s*side=["\']right["\']\)', r'.search_sorted( side="left")'),
         ]
 
         for pattern, replacement in mutations:
@@ -1168,8 +1203,12 @@ class PolarsSumSqMutation(MutationOperator):
     def matches(self, node) -> bool:
         """Check if this is a Polars horizontal/vertical sum."""
         if isinstance(node, str):
-            return (".sum_horizontal(" in node or ".sum_vertical(" in node or
-                    "pl.sum_horizontal(" in node or "pl.sum_vertical(" in node)
+            return (
+                ".sum_horizontal(" in node
+                or ".sum_vertical(" in node
+                or "pl.sum_horizontal(" in node
+                or "pl.sum_vertical(" in node
+            )
         return False
 
     def mutate(self, node) -> str:
@@ -1208,12 +1247,7 @@ class PolarsClipMutation(MutationOperator):
 
     def mutate_code(self, code: str) -> str:
         """Mutate clip operations."""
-        return re.sub(
-            r"\.clip\(min=(\d+),\s*max=(\d+)\)",
-            r".clip(min=0, max=100)",
-            code,
-            count=1
-        )
+        return re.sub(r"\.clip\(min=(\d+),\s*max=(\d+)\)", r".clip(min=0, max=100)", code, count=1)
 
 
 class PolarsRollingMutation(MutationOperator):
@@ -1256,7 +1290,7 @@ class PolarsGatherMutation(MutationOperator):
     def matches(self, node) -> bool:
         """Check if this is a Polars gather operation."""
         if isinstance(node, str):
-            return (".gather(" in node or ".take(" in node)
+            return ".gather(" in node or ".take(" in node
         return False
 
     def mutate(self, node) -> str:
@@ -1607,10 +1641,7 @@ class PolarsGroupByDynamicMutation(MutationOperator):
         """Mutate time window operations."""
         # Swap every/period for time windows
         return re.sub(
-            r"every=['\"]([^'\"]+)['\"]",
-            lambda m: f"every='2{m.group(1)[0]}'",
-            code,
-            count=1
+            r"every=['\"]([^'\"]+)['\"]", lambda m: f"every='2{m.group(1)[0]}'", code, count=1
         )
 
 
@@ -1841,7 +1872,9 @@ class PolarsStringSliceMutation(MutationOperator):
     def mutate_code(self, code: str) -> str:
         """Mutate string slice."""
         # Double the offset value
-        return re.sub(r"\.str\.slice\((\d+)", lambda m: f".str.slice({int(m.group(1)) * 2}", code, count=1)
+        return re.sub(
+            r"\.str\.slice\((\d+)", lambda m: f".str.slice({int(m.group(1)) * 2}", code, count=1
+        )
 
 
 class PolarsListMinMaxMutation(MutationOperator):
@@ -1909,7 +1942,7 @@ class PolarsLazyCollectMutation(MutationOperator):
     def matches(self, node) -> bool:
         """Check if this is a lazy evaluation."""
         if isinstance(node, str):
-            return (".lazy()" in node or ".collect()" in node or "lazy(" in node)
+            return ".lazy()" in node or ".collect()" in node or "lazy(" in node
         return False
 
     def mutate(self, node) -> str:
@@ -2015,7 +2048,7 @@ class PolarsRowItemMutation(MutationOperator):
     def matches(self, node) -> bool:
         """Check if this is row/item access."""
         if isinstance(node, str):
-            return (".row(" in node or ".item(" in node)
+            return ".row(" in node or ".item(" in node
         return False
 
     def mutate(self, node) -> str:
@@ -2135,6 +2168,7 @@ class PolarsScanReadMutation(MutationOperator):
 
 # ============= REMAINING HIGH-PRIORITY OPERATORS (for 100% coverage) =============
 
+
 class PolarsFilterByDtypesMutation(MutationOperator):
     """Mutate Polars filter_by_dtypes operations."""
 
@@ -2245,6 +2279,7 @@ class PolarsSortByExprsMutation(MutationOperator):
 
 # ============= MEDIUM-PRIORITY STRING OPERATORS =============
 
+
 class PolarsStringConcatMutation(MutationOperator):
     """Mutate Polars string concatenation."""
 
@@ -2305,6 +2340,7 @@ class PolarsStringReplaceAllMutation(MutationOperator):
 
 # ============= MEDIUM-PRIORITY LIST OPERATORS =============
 
+
 class PolarsListUniqueMutation(MutationOperator):
     """Mutate Polars list unique operations."""
 
@@ -2344,6 +2380,7 @@ class PolarsListSortMutation(MutationOperator):
 
 
 # ============= MEDIUM-PRIORITY I/O OPERATORS =============
+
 
 class PolarsReadCsvMutation(MutationOperator):
     """Mutate Polars CSV reading operations."""
@@ -2437,6 +2474,7 @@ class PolarsWriteParquetMutation(MutationOperator):
 
 # ============= MEDIUM-PRIORITY TYPE CONVERSION OPERATORS =============
 
+
 class PolarsStringToDateMutation(MutationOperator):
     """Mutate Polars string to date conversion."""
 
@@ -2528,6 +2566,7 @@ class PolarsFillNanMutation(MutationOperator):
 
 
 # ============= LOW-PRIORITY METADATA & PROPERTY OPERATORS =============
+
 
 class PolarsMetadataPropertyMutation(MutationOperator):
     """Mutate Polars metadata property access."""
@@ -2655,6 +2694,7 @@ class PolarsPartitionByMutation(MutationOperator):
 
 # ============= LOW-PRIORITY ROLLING OPERATORS =============
 
+
 class PolarsRollingMeanMutation(MutationOperator):
     """Mutate Polars rolling mean operations."""
 
@@ -2663,7 +2703,9 @@ class PolarsRollingMeanMutation(MutationOperator):
 
     def matches(self, node) -> bool:
         if isinstance(node, str):
-            return any(op in node for op in [".rolling_mean(", ".rolling_sum(", ".rolling_", "rolling("])
+            return any(
+                op in node for op in [".rolling_mean(", ".rolling_sum(", ".rolling_", "rolling("]
+            )
         return False
 
     def mutate(self, node) -> str:
@@ -2762,7 +2804,7 @@ class PolarsGetItemMutation(MutationOperator):
     """Mutate Polars bracket indexing operations."""
 
     name = "polars_getitem_mutation"
-    description = "Mutates bracket indexing [\"/\"] operations."
+    description = 'Mutates bracket indexing ["/"] operations.'
 
     def matches(self, node) -> bool:
         if isinstance(node, str):
@@ -2778,7 +2820,9 @@ class PolarsGetItemMutation(MutationOperator):
         if match:
             col_name = match.group(1)
             new_col = f"{col_name}_mutated" if not col_name.endswith("_mutated") else col_name[:-8]
-            return re.sub(r"\[[\"\']" + re.escape(col_name) + r"[\"\']", f'["{new_col}"]', code, count=1)
+            return re.sub(
+                r"\[[\"\']" + re.escape(col_name) + r"[\"\']", f'["{new_col}"]', code, count=1
+            )
         return code
 
 

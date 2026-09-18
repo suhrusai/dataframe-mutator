@@ -1,0 +1,267 @@
+name: Mutmut Plugin Comparison
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 1 * * *'
+
+jobs:
+  benchmark-vanilla:
+    name: Benchmark mutmut (Vanilla)
+    runs-on: ubuntu-latest
+    outputs:
+      mutations: ${{ steps.metrics.outputs.mutations }}
+      killed: ${{ steps.metrics.outputs.killed }}
+      survived: ${{ steps.metrics.outputs.survived }}
+      duration: ${{ steps.metrics.outputs.duration }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install mutmut pytest polars
+
+      - name: Run vanilla mutmut benchmark
+        id: vanilla
+        continue-on-error: true
+        shell: bash
+        run: |
+          cd test_benchmark
+          echo "📊 Running mutmut (vanilla - baseline)..."
+          start_time=$(date +%s%N)
+          mutmut run src/ --tests-dir tests/ --no-progress 2>&1 | tee /tmp/vanilla.log
+          end_time=$(date +%s%N)
+          elapsed_ns=$((end_time - start_time))
+          elapsed_ms=$((elapsed_ns / 1000000))
+          elapsed_s=$(echo "scale=2; $elapsed_ms / 1000" | bc)
+          echo "elapsed_ms=$elapsed_ms" >> /tmp/vanilla_time.txt
+          echo "elapsed_s=$elapsed_s" >> /tmp/vanilla_time.txt
+
+      - name: Extract vanilla metrics
+        id: metrics
+        shell: bash
+        run: |
+          MUTATIONS=$(grep -oP 'Mutants created: \K[0-9]+' /tmp/vanilla.log | head -1 || echo "0")
+          KILLED=$(grep -oP 'Mutants killed: \K[0-9]+' /tmp/vanilla.log | head -1 || echo "0")
+          SURVIVED=$(grep -oP 'Mutants survived: \K[0-9]+' /tmp/vanilla.log | head -1 || echo "0")
+
+          # Get timing
+          ELAPSED_MS=$(grep elapsed_ms /tmp/vanilla_time.txt | cut -d= -f2 || echo "0")
+          ELAPSED_S=$(grep elapsed_s /tmp/vanilla_time.txt | cut -d= -f2 || echo "0")
+
+          echo "mutations=${MUTATIONS:-0}" >> $GITHUB_OUTPUT
+          echo "killed=${KILLED:-0}" >> $GITHUB_OUTPUT
+          echo "survived=${SURVIVED:-0}" >> $GITHUB_OUTPUT
+          echo "duration=${ELAPSED_S:-0}" >> $GITHUB_OUTPUT
+
+          echo "✅ Vanilla mutmut:"
+          echo "   Mutations: ${MUTATIONS:-0}"
+          echo "   Killed: ${KILLED:-0}"
+          echo "   Survived: ${SURVIVED:-0}"
+          echo "   Duration: ${ELAPSED_S:-0}s"
+
+      - name: Upload vanilla results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vanilla-mutmut-results
+          path: /tmp/vanilla.log
+          retention-days: 7
+
+  benchmark-plugin:
+    name: Benchmark mutmut + Plugin
+    runs-on: ubuntu-latest
+    outputs:
+      mutations: ${{ steps.metrics.outputs.mutations }}
+      killed: ${{ steps.metrics.outputs.killed }}
+      survived: ${{ steps.metrics.outputs.survived }}
+      duration: ${{ steps.metrics.outputs.duration }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install mutmut pytest polars
+          pip install -e ".[polars]"
+
+      - name: Run plugin mutmut benchmark
+        id: plugin
+        continue-on-error: true
+        shell: bash
+        run: |
+          cd test_benchmark
+          echo "📊 Running mutmut + plugin (enhanced filtering)..."
+          start_time=$(date +%s%N)
+          mutmut run src/ --tests-dir tests/ --no-progress 2>&1 | tee /tmp/plugin.log
+          end_time=$(date +%s%N)
+          elapsed_ns=$((end_time - start_time))
+          elapsed_ms=$((elapsed_ns / 1000000))
+          elapsed_s=$(echo "scale=2; $elapsed_ms / 1000" | bc)
+          echo "elapsed_ms=$elapsed_ms" >> /tmp/plugin_time.txt
+          echo "elapsed_s=$elapsed_s" >> /tmp/plugin_time.txt
+
+      - name: Extract plugin metrics
+        id: metrics
+        shell: bash
+        run: |
+          MUTATIONS=$(grep -oP 'Mutants created: \K[0-9]+' /tmp/plugin.log | head -1 || echo "0")
+          KILLED=$(grep -oP 'Mutants killed: \K[0-9]+' /tmp/plugin.log | head -1 || echo "0")
+          SURVIVED=$(grep -oP 'Mutants survived: \K[0-9]+' /tmp/plugin.log | head -1 || echo "0")
+
+          # Get timing
+          ELAPSED_MS=$(grep elapsed_ms /tmp/plugin_time.txt | cut -d= -f2 || echo "0")
+          ELAPSED_S=$(grep elapsed_s /tmp/plugin_time.txt | cut -d= -f2 || echo "0")
+
+          echo "mutations=${MUTATIONS:-0}" >> $GITHUB_OUTPUT
+          echo "killed=${KILLED:-0}" >> $GITHUB_OUTPUT
+          echo "survived=${SURVIVED:-0}" >> $GITHUB_OUTPUT
+          echo "duration=${ELAPSED_S:-0}" >> $GITHUB_OUTPUT
+
+          echo "✅ Plugin mutmut:"
+          echo "   Mutations: ${MUTATIONS:-0}"
+          echo "   Killed: ${KILLED:-0}"
+          echo "   Survived: ${SURVIVED:-0}"
+          echo "   Duration: ${ELAPSED_S:-0}s"
+
+      - name: Upload plugin results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: plugin-mutmut-results
+          path: /tmp/plugin.log
+          retention-days: 7
+
+  compare-results:
+    name: Compare Results
+    runs-on: ubuntu-latest
+    needs: [benchmark-vanilla, benchmark-plugin]
+    if: github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Download all results
+        uses: actions/download-artifact@v4
+        with:
+          path: results/
+
+      - name: Create comparison comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+
+            let vanillaLog = '';
+            let pluginLog = '';
+
+            try {
+              vanillaLog = fs.readFileSync('results/vanilla-mutmut-results/vanilla.log', 'utf8');
+            } catch (e) {
+              console.log('Vanilla log not found');
+            }
+
+            try {
+              pluginLog = fs.readFileSync('results/plugin-mutmut-results/plugin.log', 'utf8');
+            } catch (e) {
+              console.log('Plugin log not found');
+            }
+
+            // Extract mutation counts and timing
+            const vanillaMutMatch = vanillaLog.match(/Mutants created: (\d+)/);
+            const pluginMutMatch = pluginLog.match(/Mutants created: (\d+)/);
+
+            const vanillaMuts = vanillaMutMatch ? parseInt(vanillaMutMatch[1]) : 0;
+            const pluginMuts = pluginMutMatch ? parseInt(pluginMutMatch[1]) : 0;
+
+            // Try to extract timing from logs
+            const vanillaTimeMatch = vanillaLog.match(/real\s+(\d+)m([\d.]+)s/);
+            const pluginTimeMatch = pluginLog.match(/real\s+(\d+)m([\d.]+)s/);
+
+            let vanillaTime = 0;
+            let pluginTime = 0;
+
+            if (vanillaTimeMatch) {
+              vanillaTime = parseInt(vanillaTimeMatch[1]) * 60 + parseFloat(vanillaTimeMatch[2]);
+            }
+            if (pluginTimeMatch) {
+              pluginTime = parseInt(pluginTimeMatch[1]) * 60 + parseFloat(pluginTimeMatch[2]);
+            }
+
+            // Use outputs if timing extraction failed
+            if (vanillaTime === 0) {
+              vanillaTime = parseFloat('${{ needs.benchmark-vanilla.outputs.duration }}') || 0;
+            }
+            if (pluginTime === 0) {
+              pluginTime = parseFloat('${{ needs.benchmark-plugin.outputs.duration }}') || 0;
+            }
+
+            // Calculate metrics
+            const mutationDiff = vanillaMuts - pluginMuts;
+            const mutationPct = vanillaMuts > 0 ? ((mutationDiff / vanillaMuts) * 100).toFixed(1) : 0;
+
+            const timeDiff = vanillaTime - pluginTime;
+            const timePct = vanillaTime > 0 ? ((timeDiff / vanillaTime) * 100).toFixed(1) : 0;
+            const speedup = vanillaTime > 0 && pluginTime > 0 ? (vanillaTime / pluginTime).toFixed(2) : 1;
+
+            let comment = '## 🔬 Mutmut Plugin Performance Comparison\n\n';
+            comment += 'Performance comparison: vanilla mutmut vs mutmut + Polars plugin\n\n';
+
+            comment += '### ⚡ Speed Metrics\n\n';
+            comment += '| Metric | Vanilla | With Plugin | Difference |\n';
+            comment += '|--------|---------|------------|------------|\n';
+
+            if (vanillaTime > 0 && pluginTime > 0) {
+              comment += `| Execution Time | ${vanillaTime.toFixed(2)}s | ${pluginTime.toFixed(2)}s | ${timeDiff > 0 ? '📉' : '📈'} ${Math.abs(timeDiff).toFixed(2)}s (${timePct}%) |\n`;
+              comment += `| Speedup Factor | 1.00x | ${speedup}x | 🚀 ${(speedup - 1).toFixed(2)}x faster |\n`;
+            }
+
+            comment += '\n### 📊 Mutation Filtering\n\n';
+            comment += '| Metric | Vanilla | With Plugin | Impact |\n';
+            comment += '|--------|---------|------------|--------|\n';
+            comment += `| Mutations Created | ${vanillaMuts} | ${pluginMuts} | ${mutationDiff > 0 ? '📉' : '📈'} ${Math.abs(mutationDiff)} (${mutationPct}%) |\n`;
+
+            comment += '\n### 📈 Efficiency Analysis\n\n';
+
+            if (speedup > 1.5) {
+              comment += `✅ **Significant speedup**: ${speedup}x faster with plugin\n`;
+            } else if (speedup > 1.2) {
+              comment += `✅ **Meaningful speedup**: ${speedup}x faster with plugin\n`;
+            } else if (speedup > 1.0) {
+              comment += `✅ **Modest speedup**: ${speedup}x faster with plugin\n`;
+            } else {
+              comment += `⚠️ No significant speedup detected (may vary with dataset)\n`;
+            }
+
+            if (mutationPct > 0) {
+              comment += `✅ **Mutation filtering**: ${mutationPct}% reduction in test mutations\n`;
+            }
+
+            comment += `✅ **Test project**: test_benchmark/ (8 Polars operations, real-world code)\n\n`;
+
+            comment += '### Notes\n\n';
+            comment += '- Speedup depends on code composition (more Polars = more benefit)\n';
+            comment += '- Test suite overhead affects total time\n';
+            comment += '- Plugin intelligently filters semantic-only mutations\n';
+            comment += '[📊 Full logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
