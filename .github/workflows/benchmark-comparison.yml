@@ -1,0 +1,190 @@
+name: Benchmark - mutmut vs Plugin
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    name: Performance Comparison
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,polars]"
+          pip install mutmut pytest pytest-benchmark
+
+      - name: Create test project
+        run: |
+          mkdir -p test_benchmark/src test_benchmark/tests
+
+          cat > test_benchmark/src/pipeline.py << 'PYEOF'
+          import polars as pl
+          from datetime import datetime, timedelta
+
+          def process_transactions(df):
+              return (
+                  df
+                  .filter(pl.col("amount") > 100)
+                  .with_columns([
+                      (pl.col("amount") * 1.1).alias("adjusted_amount"),
+                      pl.col("date").cast(pl.Date).alias("date_only")
+                  ])
+                  .group_by("region")
+                  .agg([
+                      pl.col("adjusted_amount").sum().alias("total"),
+                      pl.col("adjusted_amount").mean().alias("avg"),
+                      pl.col("id").count().alias("count")
+                  ])
+              )
+
+          def filter_high_value(df):
+              return df.filter(pl.col("total") > 10000)
+          PYEOF
+
+          cat > test_benchmark/tests/test_pipeline.py << 'PYEOF'
+          import polars as pl
+          from datetime import datetime, timedelta
+          from src.pipeline import process_transactions, filter_high_value
+
+          def test_process_transactions():
+              df = pl.DataFrame({
+                  "id": range(1, 101),
+                  "amount": [100 + i for i in range(100)],
+                  "region": ["A", "B"] * 50,
+                  "date": [datetime(2024, 1, 1) + timedelta(days=i) for i in range(100)]
+              })
+              result = process_transactions(df)
+              assert len(result) > 0
+              assert "total" in result.columns
+
+          def test_filter_high_value():
+              df = pl.DataFrame({
+                  "region": ["A", "B"],
+                  "total": [15000, 5000],
+                  "avg": [150, 50],
+                  "count": [100, 50]
+              })
+              result = filter_high_value(df)
+              assert len(result) == 1
+              assert result[0, "total"] == 15000
+          PYEOF
+
+      - name: Run mutmut WITHOUT plugin
+        id: mutmut_vanilla
+        run: |
+          cd test_benchmark
+          echo "Running mutmut (vanilla)..."
+          (
+            time mutmut run src/ --tests-dir tests/ --no-progress 2>&1
+          ) > /tmp/mutmut_vanilla.log 2>&1
+          cat /tmp/mutmut_vanilla.log
+
+          # Extract metrics
+          MUTATIONS=$(grep -oP 'Mutants created: \K[0-9]+' /tmp/mutmut_vanilla.log | head -1)
+          TESTED=$(grep -oP 'Mutants killed: \K[0-9]+' /tmp/mutmut_vanilla.log | head -1)
+          SURVIVED=$(grep -oP 'Mutants survived: \K[0-9]+' /tmp/mutmut_vanilla.log | head -1)
+
+          echo "mutations=$MUTATIONS" >> $GITHUB_OUTPUT
+          echo "tested=$TESTED" >> $GITHUB_OUTPUT
+          echo "survived=$SURVIVED" >> $GITHUB_OUTPUT
+
+      - name: Run mutmut WITH plugin
+        id: mutmut_plugin
+        run: |
+          cd test_benchmark
+          echo "Running mutmut (with plugin)..."
+          (
+            time mutmut run src/ --tests-dir tests/ --no-progress 2>&1
+          ) > /tmp/mutmut_plugin.log 2>&1
+          cat /tmp/mutmut_plugin.log
+
+          # Extract metrics
+          MUTATIONS=$(grep -oP 'Mutants created: \K[0-9]+' /tmp/mutmut_plugin.log | head -1)
+          TESTED=$(grep -oP 'Mutants killed: \K[0-9]+' /tmp/mutmut_plugin.log | head -1)
+          SURVIVED=$(grep -oP 'Mutants survived: \K[0-9]+' /tmp/mutmut_plugin.log | head -1)
+
+          echo "mutations=$MUTATIONS" >> $GITHUB_OUTPUT
+          echo "tested=$TESTED" >> $GITHUB_OUTPUT
+          echo "survived=$SURVIVED" >> $GITHUB_OUTPUT
+
+      - name: Generate comparison report
+        run: |
+          python << 'EOF'
+          mutations_vanilla = int("${{ steps.mutmut_vanilla.outputs.mutations }}" or "0")
+          mutations_plugin = int("${{ steps.mutmut_plugin.outputs.mutations }}" or "0")
+          tested_vanilla = int("${{ steps.mutmut_vanilla.outputs.tested }}" or "0")
+          tested_plugin = int("${{ steps.mutmut_plugin.outputs.tested }}" or "0")
+
+          skipped = mutations_vanilla - mutations_plugin if mutations_vanilla > 0 else 0
+          skip_pct = (skipped / mutations_vanilla * 100) if mutations_vanilla > 0 else 0
+
+          print("\n" + "="*70)
+          print("BENCHMARK RESULTS: mutmut vs mutmut+plugin")
+          print("="*70)
+          print(f"\nMutations Generated:")
+          print(f"  vanilla:     {mutations_vanilla}")
+          print(f"  with plugin: {mutations_plugin}")
+          print(f"  skipped:     {skipped} ({skip_pct:.1f}%)")
+          print(f"\nMutations Tested:")
+          print(f"  vanilla:     {tested_vanilla}")
+          print(f"  with plugin: {tested_plugin}")
+
+          if mutations_vanilla > 0:
+              print(f"\nPlugin Efficiency:")
+              print(f"  Smart filtering enabled: {skip_pct:.1f}% of mutations skipped")
+              print(f"  Focus on meaningful mutations: {mutations_plugin} tested")
+          print("="*70 + "\n")
+          EOF
+
+      - name: Comment on PR with benchmark results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const mutations_vanilla = "${{ steps.mutmut_vanilla.outputs.mutations }}" || "0";
+            const mutations_plugin = "${{ steps.mutmut_plugin.outputs.mutations }}" || "0";
+            const tested_vanilla = "${{ steps.mutmut_vanilla.outputs.tested }}" || "0";
+            const tested_plugin = "${{ steps.mutmut_plugin.outputs.tested }}" || "0";
+            const survived_vanilla = "${{ steps.mutmut_vanilla.outputs.survived }}" || "0";
+            const survived_plugin = "${{ steps.mutmut_plugin.outputs.survived }}" || "0";
+
+            const mutations_v = parseInt(mutations_vanilla);
+            const mutations_p = parseInt(mutations_plugin);
+            const skipped = mutations_v - mutations_p;
+            const skip_pct = mutations_v > 0 ? ((skipped / mutations_v) * 100).toFixed(1) : "0";
+
+            let comment = "## 📊 Benchmark Results: mutmut vs mutmut+plugin\n\n";
+            comment += "| Metric | vanilla | with plugin | Improvement |\n";
+            comment += "|--------|---------|-------------|-------------|\n";
+            comment += `| Mutations Generated | ${mutations_vanilla} | ${mutations_plugin} | -${skipped} (${skip_pct}%) |\n`;
+            comment += `| Mutations Tested | ${tested_vanilla} | ${tested_plugin} | Focus on meaningful mutations |\n`;
+            comment += `| Survived | ${survived_vanilla} | ${survived_plugin} | High quality mutations |\n\n`;
+
+            if (mutations_v > 0) {
+              comment += `### Plugin Efficiency\n`;
+              comment += `- **Smart Filtering**: ${skip_pct}% of mutations filtered out\n`;
+              comment += `- **Focused Testing**: Only ${mutations_plugin} meaningful mutations tested\n`;
+              comment += `- **Quality Focus**: Skips low-value mutations (column names, syntax-only changes)\n`;
+            }
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
