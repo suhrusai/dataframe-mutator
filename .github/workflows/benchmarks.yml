@@ -57,12 +57,14 @@ jobs:
           python -c "import sys; print(f'Platform: {sys.platform}')"
 
       - name: Run TPC-H Benchmark (Industry Standard)
+        shell: bash
         run: |
           echo "=== TPC-H Benchmark ===" > tpch-results.txt
           time pytest benchmarks/test_tpch_inspired_workload.py -v --tb=short --durations=15 >> tpch-results.txt 2>&1
           cat tpch-results.txt
 
       - name: Run Comprehensive Benchmarks
+        shell: bash
         run: |
           echo "=== Comprehensive Operations ===" > comprehensive-results.txt
           time pytest benchmarks/test_extensive_polars_operations.py -v --tb=short --durations=15 >> comprehensive-results.txt 2>&1
@@ -70,6 +72,7 @@ jobs:
 
       - name: Extract and save benchmark metrics
         if: always()
+        shell: bash
         run: |
           mkdir -p benchmark-reports
 
