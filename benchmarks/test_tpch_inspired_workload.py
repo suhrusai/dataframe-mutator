@@ -44,12 +44,12 @@ def tpch_dataset() -> "Tuple[pl.DataFrame, pl.DataFrame, pl.DataFrame, pl.DataFr
 
     # ORDERS table (600,000 orders)
     n_orders = 600000
-    order_dates = pl.date_range(
-        datetime(1992, 1, 1),
-        datetime(1998, 12, 31),
-        interval="1h",
-        eager=True
-    )
+    # Create dates from 1992-1998 (2557 days total)
+    start_date = datetime(1992, 1, 1)
+    end_date = datetime(1998, 12, 31)
+    total_days = (end_date - start_date).days + 1
+    order_dates_list = [start_date + timedelta(days=i % total_days) for i in range(n_orders)]
+    order_dates = order_dates_list
 
     orders = pl.DataFrame({
         "o_orderkey": list(range(1, n_orders + 1)),
