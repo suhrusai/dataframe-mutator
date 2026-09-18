@@ -5,6 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2025-09-17
+
+### Added
+- **Command-Line Interface (CLI)**
+  - `dataframe-mutator analyze` - Analyze mutation efficiency
+  - `dataframe-mutator check` - Compare to baseline
+  - `dataframe-mutator init` - Initialize config
+  - `dataframe-mutator version` - Show version
+
+- **Configuration System**
+  - TOML file support (dataframe-mutator.toml)
+  - JSON file support
+  - Programmatic configuration via MutationConfig class
+  - Flexible threshold, operator, and output settings
+
+- **pytest Integration**
+  - `pytest --mutation` plugin support
+  - Automatic mutation testing with test runs
+  - Mutation testing fixtures
+  - Integration with pytest output
+
+- **Reports & Export**
+  - HTML report generation with styled output
+  - JSON export for tool integration
+  - Pretty-formatted metrics and summaries
+  - Team-shareable reports
+
+- **Baseline Tracking**
+  - Save mutation scores as baseline
+  - Compare current vs baseline
+  - Track improvements over time
+  - Historical analysis capabilities
+
+- **Integrations**
+  - Slack notifications for results
+  - GitHub Actions annotations
+  - Custom operator registry
+  - Operator suggestion engine
+
+- **Parallel Testing**
+  - Multi-worker mutation testing
+  - 3-8x speed improvement
+  - Auto CPU detection
+  - Configurable worker count
+
+- **Advanced Features**
+  - Multi-file analysis
+  - Operator suggestions based on code
+  - Performance benchmarking
+  - Comprehensive documentation
+
+### Improved
+- Configuration system for flexibility
+- Test coverage (11 new tests, all passing)
+- Documentation (ADVANCED_FEATURES.md)
+- Cross-platform compatibility
+
 ## [0.1.1] - 2025-09-17
 
 ### Added
